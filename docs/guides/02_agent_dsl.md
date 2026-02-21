@@ -152,6 +152,7 @@ guardrails do
   pii_filter :redact
   max_tool_calls 5
   max_turns 20
+  audit_max_entries 5000
   denied_domains ["evil.example.com"]
   audit :full
 end
@@ -165,6 +166,7 @@ end
 | `pii_filter`        | `:redact`, `:block`, `:warn`, `:off`      | `:off`    |
 | `max_tool_calls`    | Any positive integer                      | `10`      |
 | `max_turns`         | Any positive integer                      | `50`      |
+| `audit_max_entries` | Any positive integer                      | `nil`     |
 | `denied_domains`    | Array of domain strings                   | `[]`      |
 | `audit`             | `:full`, `:errors_only`, `:off`           | `:full`   |
 
@@ -186,6 +188,7 @@ Integer settings reject non-positive values and non-integers:
 guardrails do
   max_tool_calls 0    # => ConfigurationError: Must be a positive integer.
   max_tool_calls "10" # => ConfigurationError: Must be a positive integer.
+  audit_max_entries 0 # => ConfigurationError: Must be a positive integer.
 end
 ```
 
@@ -251,6 +254,7 @@ class ApplicationAgent < Spurline::Agent
     pii_filter :off
     max_tool_calls 10
     max_turns 50
+    audit_max_entries 5000
     audit :full
   end
 

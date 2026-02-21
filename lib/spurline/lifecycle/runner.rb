@@ -45,6 +45,13 @@ module Spurline
 
           # 3. Stream LLM response
           buffer = Streaming::Buffer.new
+          @audit.record(:llm_request,
+            turn: turn.number,
+            loop: @loop_count,
+            message_count: messages.length,
+            has_tools: !tools_schema.empty?,
+            tool_count: tools_schema.length)
+
           @adapter.stream(
             messages: messages,
             system: system_prompt,
@@ -54,6 +61,12 @@ module Spurline
             buffer << chunk
             chunk_handler&.call(chunk) if chunk.text?
           end
+          @audit.record(:llm_response,
+            turn: turn.number,
+            loop: @loop_count,
+            stop_reason: buffer.stop_reason,
+            tool_call_count: buffer.tool_call_count,
+            text_length: buffer.full_text.length)
 
           # 4. Parse response
           if buffer.tool_call?
@@ -70,12 +83,17 @@ module Spurline
               end
 
               # Yield tool_start chunk
+              filtered_args = Audit::SecretFilter.filter(
+                tool_call[:arguments],
+                tool_name: tool_call[:name],
+                registry: @tool_runner.registry
+              )
               chunk_handler&.call(
                 Streaming::Chunk.new(
                   type: :tool_start,
                   turn: turn.number,
                   session_id: session.id,
-                  metadata: { tool_name: tool_call[:name], arguments: tool_call[:arguments] }
+                  metadata: { tool_name: tool_call[:name], arguments: filtered_args }
                 )
               )
 
@@ -87,7 +105,9 @@ module Spurline
               @audit.record(:tool_call,
                 tool: tool_call[:name],
                 arguments: tool_call[:arguments],
-                duration_ms: duration_ms)
+                duration_ms: duration_ms,
+                turn: turn.number,
+                loop: @loop_count)
 
               # Yield tool_end chunk
               chunk_handler&.call(
@@ -98,6 +118,13 @@ module Spurline
                   metadata: { tool_name: tool_call[:name], duration_ms: duration_ms }
                 )
               )
+
+              @audit.record(:tool_result,
+                tool: tool_call[:name],
+                turn: turn.number,
+                loop: @loop_count,
+                result_length: result.text.to_s.length,
+                trust: result.trust)
 
               # 6. Update input for next loop iteration with tool result
               input = result

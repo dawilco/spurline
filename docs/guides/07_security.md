@@ -131,6 +131,7 @@ class MyAgent < Spurline::Agent
     pii_filter       :redact     # :redact, :block, :warn, or :off
     max_tool_calls   10          # per-turn tool call limit
     max_turns        50          # maximum conversation turns
+    audit_max_entries 5000       # optional FIFO cap for in-memory audit entries
     audit            :full       # :full, :errors_only, or :off
   end
 end
@@ -144,6 +145,7 @@ All guardrail settings have safe defaults. If you omit the `guardrails` block en
 | `pii_filter` | `:off` | No PII scanning |
 | `max_tool_calls` | `10` | 10 tool calls per turn |
 | `max_turns` | `50` | 50 conversation turns |
+| `audit_max_entries` | `nil` | Unbounded in-memory audit log (set to positive integer to cap) |
 | `audit` | `:full` | Full audit logging |
 
 Invalid values raise `ConfigurationError` at class load time, not at runtime. If your agent class loads, its guardrails are valid.
@@ -249,6 +251,17 @@ The context pipeline is the only path content takes to the LLM. Every LLM call a
 The pipeline accepts an array of `Content` objects and returns an array of rendered strings ready for the LLM prompt. If any stage rejects content (injection detected, PII blocked), the pipeline raises and the LLM call does not proceed.
 
 You do not invoke the pipeline directly. The lifecycle runner calls it as part of every LLM request. It exists as a separate, testable component so that security behavior can be verified independently of the rest of the framework.
+
+---
+
+## Audit Secret Redaction
+
+Tool-call arguments are redacted before they are persisted or streamed:
+
+1. Schema-declared sensitive fields (`sensitive: true` in tool parameter schema)
+2. Pattern fallback for common secret names (`api_key`, `token`, `password`, `secret`, and related variants)
+
+Redaction uses reference placeholders like `[REDACTED:api_key]`. This applies to audit entries, session turn tool-call records, and `:tool_start` chunk metadata.
 
 ---
 

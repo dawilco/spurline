@@ -29,6 +29,41 @@ RSpec.describe Spurline::Tools::Base do
     it "sets parameters" do
       expect(tool_class.parameters[:type]).to eq("object")
     end
+
+    describe ".sensitive_parameters" do
+      it "returns sensitive parameter names from schema" do
+        sensitive_tool = Class.new(described_class) do
+          parameters({
+            type: "object",
+            properties: {
+              to: { type: "string" },
+              api_key: { type: "string", sensitive: true },
+            },
+          })
+        end
+
+        expect(sensitive_tool.sensitive_parameters).to eq(Set[:api_key])
+      end
+
+      it "handles string keys in schema" do
+        sensitive_tool = Class.new(described_class) do
+          parameters(
+            "type" => "object",
+            "properties" => {
+              "token" => { "type" => "string", "sensitive" => true },
+              "query" => { "type" => "string" },
+            }
+          )
+        end
+
+        expect(sensitive_tool.sensitive_parameters).to eq(Set[:token])
+      end
+
+      it "returns empty set when no parameters are declared" do
+        empty_tool = Class.new(described_class)
+        expect(empty_tool.sensitive_parameters).to eq(Set.new)
+      end
+    end
   end
 
   describe "#call" do

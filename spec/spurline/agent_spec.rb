@@ -70,6 +70,21 @@ RSpec.describe Spurline::Agent do
       agent = agent_class.new
       expect(agent.audit_log).to be_a(Spurline::Audit::Log)
     end
+
+    it "uses global audit_max_entries when guardrails do not override it" do
+      original = Spurline.config.audit_max_entries
+      Spurline.configure { |config| config.audit_max_entries = 2 }
+
+      agent = agent_class.new
+      agent.audit_log.record(:turn_start, turn: 1)
+      agent.audit_log.record(:tool_call, tool: "echo")
+      agent.audit_log.record(:turn_end, turn: 1)
+
+      expect(agent.audit_log.size).to eq(2)
+      expect(agent.audit_log.summary[:total_events]).to eq(3)
+    ensure
+      Spurline.configure { |config| config.audit_max_entries = original }
+    end
   end
 
   describe "#run with block" do
@@ -194,6 +209,28 @@ RSpec.describe Spurline::Agent do
       agent.run("Echo something") { |_chunk| }
 
       expect(agent.audit_log.tool_calls.length).to eq(1)
+    end
+
+    it "records llm boundary and tool_result replay events" do
+      agent = agent_class.new
+      agent.use_stub_adapter(responses: [
+        stub_tool_call(:echo, message: "test"),
+        stub_text("Done"),
+      ])
+
+      agent.run("Echo something") { |_chunk| }
+
+      expect(agent.audit_log.llm_requests.length).to eq(2)
+      expect(agent.audit_log.llm_responses.length).to eq(2)
+
+      tool_call_event = agent.audit_log.tool_calls.first
+      expect(tool_call_event[:loop]).to eq(1)
+      expect(tool_call_event[:turn]).to eq(1)
+
+      tool_result = agent.audit_log.events_of_type(:tool_result).first
+      expect(tool_result[:tool]).to eq("echo")
+      expect(tool_result[:trust]).to eq(:external)
+      expect(tool_result[:result_length]).to be > 0
     end
   end
 
@@ -374,6 +411,26 @@ RSpec.describe Spurline::Agent do
           end
         end
       }.to raise_error(Spurline::ConfigurationError, /max_tool_calls/)
+    end
+
+    it "raises ConfigurationError for non-positive audit_max_entries" do
+      expect {
+        Class.new(described_class) do
+          guardrails do
+            audit_max_entries 0
+          end
+        end
+      }.to raise_error(Spurline::ConfigurationError, /audit_max_entries/)
+    end
+
+    it "accepts valid audit_max_entries" do
+      klass = Class.new(described_class) do
+        guardrails do
+          audit_max_entries 100
+        end
+      end
+
+      expect(klass.guardrail_config.settings[:audit_max_entries]).to eq(100)
     end
   end
 

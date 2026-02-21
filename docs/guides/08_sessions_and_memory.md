@@ -83,7 +83,7 @@ A turn is one request-response cycle within a session. It holds the user input, 
 | `finished_at` | Time or nil    | When the turn completed                          |
 | `metadata`    | Hash           | Includes `duration_ms` once finished             |
 
-Each tool call is recorded as a hash with `name`, `arguments`, `result`, `duration_ms`, and `timestamp`. The lifecycle runner records them automatically via `turn.record_tool_call`.
+Each tool call is recorded as a hash with `name`, `arguments`, `result`, `duration_ms`, and `timestamp`. The lifecycle runner records them automatically via `turn.record_tool_call`. Sensitive argument fields are redacted before storage (for example, `[REDACTED:api_key]`).
 
 A turn is complete when `finished_at` is non-nil:
 

@@ -66,6 +66,8 @@ chunk.done?       # true when type == :done
 | `:tool_end`   | `tool_name`, `duration_ms`                   |
 | `:done`       | `stop_reason`                                |
 
+`tool_start` arguments are audit-safe: sensitive fields are redacted before chunk emission (for example, `[REDACTED:api_key]`).
+
 ---
 
 ## Stream Anatomy: What Arrives and When

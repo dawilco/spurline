@@ -68,7 +68,7 @@ agent = ResearchAgent.new(user: "alice", session_id: "abc-123", persona: :defaul
 
 6. **Adapter resolved.** The model name from `use_model` is resolved through the adapter registry to an adapter instance (e.g., `Adapters::Claude`).
 
-7. **Audit::Log created.** Bound to the session for structured event recording.
+7. **Audit::Log created.** Bound to the session with tool registry awareness for argument redaction and optional retention (`max_entries`) configuration.
 
 8. **ContextAssembler created.** Responsible for merging persona, memory, and input into a content array for the pipeline.
 
@@ -94,6 +94,7 @@ The call loop lives in `Lifecycle::Runner#run` (`lib/spurline/lifecycle/runner.r
    a. ContextAssembler.assemble   -- persona + memory + input --> Content array
    b. ContextPipeline.process     -- scan, filter, fence --> rendered strings
    c. adapter.stream              -- send to LLM, receive chunks
+      - record :llm_request and :llm_response audit events (shape only)
    d. Buffer accumulates chunks; text chunks yielded to caller
    e. If buffer contains a tool call:
         - Check max_tool_calls --> MaxToolCallsError if exceeded
@@ -136,12 +137,13 @@ Text chunks are yielded to the caller immediately. Tool-related chunks are synth
 When the LLM returns a tool call instead of text, the runner:
 
 1. Checks the session's tool call count against `max_tool_calls`. If exceeded, raises `MaxToolCallsError`.
-2. Yields a `:tool_start` chunk with the tool name and arguments in metadata.
+2. Yields a `:tool_start` chunk with the tool name and redacted arguments in metadata.
 3. Calls `Tools::Runner#execute`, which validates permissions, validates arguments against the JSON Schema, instantiates the tool, and invokes `#call`.
 4. The tool result is wrapped by `Security::Gates::ToolResult` as `Content` with `trust: :external`.
-5. Yields a `:tool_end` chunk with the tool name and execution duration.
-6. The tool result becomes the input for the next loop iteration.
-7. The loop continues -- context is reassembled with the tool result, sent to the LLM, and the process repeats.
+5. Records `:tool_call` (with loop correlation) and `:tool_result` audit events.
+6. Yields a `:tool_end` chunk with the tool name and execution duration.
+7. The tool result becomes the input for the next loop iteration.
+8. The loop continues -- context is reassembled with the tool result, sent to the LLM, and the process repeats.
 
 This continues until the LLM produces a text response or a stop condition is hit.
 
@@ -174,6 +176,7 @@ class MyAgent < Spurline::Agent
   guardrails do
     max_tool_calls 10   # default: 10
     max_turns 50         # default: 50
+    audit_max_entries 5000 # optional FIFO retention cap for in-memory audit log
   end
 end
 ```

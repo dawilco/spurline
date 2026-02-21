@@ -33,7 +33,11 @@ module Spurline
       )
       @pipeline = Security::ContextPipeline.new(guardrails: guardrail_settings)
       @adapter = resolve_adapter
-      @audit_log = Audit::Log.new(session: @session)
+      @audit_log = Audit::Log.new(
+        session: @session,
+        registry: self.class.tool_registry,
+        max_entries: resolve_audit_max_entries
+      )
       @assembler = Memory::ContextAssembler.new
       @state = :ready
 
@@ -153,6 +157,14 @@ module Spurline
     def guardrail_settings
       gc = self.class.guardrail_config
       gc.respond_to?(:to_h) ? gc.to_h : gc.settings
+    end
+
+    def resolve_audit_max_entries
+      settings = guardrail_settings
+      guardrail_limit = settings[:audit_max_entries]
+      return guardrail_limit unless guardrail_limit.nil?
+
+      Spurline.config.audit_max_entries
     end
 
     def build_tools_schema

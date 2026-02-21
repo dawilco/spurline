@@ -11,6 +11,7 @@ module Spurline
     setting :default_model, default: :claude_sonnet
     setting :log_level, default: :info
     setting :audit_mode, default: :full
+    setting :audit_max_entries, default: nil
     setting :permissions_file, default: "config/permissions.yml"
     setting :brave_api_key, default: nil
   end

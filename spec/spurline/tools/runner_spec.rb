@@ -39,6 +39,31 @@ RSpec.describe Spurline::Tools::Runner do
       expect(session.current_turn.tool_calls.first[:name]).to eq("echo")
     end
 
+    it "records redacted arguments on the session turn" do
+      sensitive_tool = Class.new(Spurline::Tools::Base) do
+        tool_name :sensitive
+        parameters(
+          type: "object",
+          properties: {
+            api_key: { type: "string", sensitive: true },
+            message: { type: "string" },
+          },
+          required: %w[api_key message]
+        )
+
+        def call(api_key:, message:)
+          "#{api_key}:#{message}"
+        end
+      end
+      registry.register(:sensitive, sensitive_tool)
+
+      tool_call = { name: :sensitive, arguments: { api_key: "secret-value", message: "hello" } }
+      runner.execute(tool_call, session: session)
+      recorded = session.current_turn.tool_calls.first[:arguments]
+
+      expect(recorded).to eq(api_key: "[REDACTED:api_key]", message: "hello")
+    end
+
     it "raises ToolNotFoundError for unknown tools" do
       tool_call = { name: :nonexistent, arguments: {} }
       expect {

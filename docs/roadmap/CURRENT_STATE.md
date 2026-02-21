@@ -48,7 +48,7 @@ Nothing bypasses a gate. The pipeline refuses raw strings at the type level.
 
 ### Injection Scanner — **Built**
 
-Pattern-based, two levels (`:strict` / `:warn`). Standard patterns: "ignore previous instructions", "you are now", "new system prompt", system prompt injection markers, etc. Extensible — spur gems can register domain-specific patterns.
+Pattern-based, three levels (`:strict` / `:moderate` / `:permissive`). Standard patterns: "ignore previous instructions", "you are now", "new system prompt", system prompt injection markers, etc. Extensible — spur gems can register domain-specific patterns.
 
 ### PII Filter — **Built**
 
@@ -86,11 +86,13 @@ First spur: `spurline-web-search` (in `spurs/` directory). Functional proof-of-c
 
 Long-term memory (vector store abstraction, semantic retrieval) is **specified in architecture docs but not implemented**. The `memory :long_term, adapter: :postgres` DSL exists but wires to nothing functional yet.
 
-### Audit Log — **Partial**
+### Audit Log — **Built (M0.5 Hardening Complete)**
 
-`Audit::Log` records tool calls, errors, and session events. Append-only, session-scoped. Records tool name, arguments, trust level, timestamps.
+`Audit::Log` records turn, LLM boundary, tool call/result, and error events with structured metadata. Tool-call arguments are redacted before persistence using schema-declared sensitive parameters (`sensitive: true`) with pattern fallback. Redaction uses reference placeholders (for example, `[REDACTED:api_key]`).
 
-What is missing: structured replay capability, tamper-evident storage, retention configuration, reference-token-only logging for secrets (currently possible to log secrets if they arrive as tool arguments).
+Structured replay helpers are implemented (`llm_requests`, `llm_responses`, `turn_events`, `replay_timeline`) and in-memory retention is configurable via `audit_max_entries` with FIFO eviction tracking.
+
+What is still missing: tamper-evident storage and persistent backend-level retention policies.
 
 ### LLM Adapters — **Partial**
 
@@ -162,7 +164,9 @@ Idempotency keys for irreversible tool calls are referenced in architecture docs
 
 ### Secret Management — **Partial (basic only)**
 
-The three-tier secret model (framework credentials, tool secrets, runtime vault) is documented in architecture. In practice, the current implementation relies on environment variables for credentials. No vault abstraction, no key rotation, no runtime secret scoping. Secrets can currently end up in audit log entries if passed as tool arguments.
+The three-tier secret model (framework credentials, tool secrets, runtime vault) is documented in architecture. In practice, the current implementation relies on environment variables for credentials. No vault abstraction, no key rotation, no runtime secret scoping.
+
+Audit/tool/session leakage for tool-call arguments is now mitigated by default redaction, but full runtime secret lifecycle management is still pending.
 
 ---
 

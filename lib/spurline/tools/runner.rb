@@ -6,6 +6,8 @@ module Spurline
     # Executes tool calls with permission checking, confirmation, and result wrapping.
     # Tool results always enter the pipeline as Content objects with trust: :external.
     class Runner
+      attr_reader :registry
+
       def initialize(registry:, guardrails: {}, permissions: {})
         @registry = registry
         @guardrails = guardrails
@@ -28,10 +30,15 @@ module Spurline
         end
         raw_result = scheduler.run { tool.call(**args) }
         duration_ms = ((Time.now - started_at) * 1000).round
+        filtered_arguments = Audit::SecretFilter.filter(
+          tool_call[:arguments],
+          tool_name: tool_name,
+          registry: @registry
+        )
 
         session.current_turn&.record_tool_call(
           name: tool_name,
-          arguments: tool_call[:arguments],
+          arguments: filtered_arguments,
           result: raw_result,
           duration_ms: duration_ms
         )

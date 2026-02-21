@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require "set"
 
 module Spurline
   module Tools
@@ -30,6 +31,26 @@ module Spurline
             @parameters = params
           else
             @parameters || {}
+          end
+        end
+
+        # Returns schema-declared sensitive parameter names.
+        #
+        # A parameter is treated as sensitive when its schema property includes:
+        #   sensitive: true
+        def sensitive_parameters
+          schema = parameters || {}
+          properties = schema[:properties] || schema["properties"] || {}
+          return Set.new unless properties.is_a?(Hash)
+
+          Set.new.tap do |names|
+            properties.each do |name, definition|
+              next unless definition.is_a?(Hash)
+
+              sensitive = definition[:sensitive]
+              sensitive = definition["sensitive"] if sensitive.nil?
+              names << name.to_sym if sensitive
+            end
           end
         end
 

@@ -41,6 +41,7 @@ module Spurline
             pii_filter: :off,
             max_tool_calls: 10,
             max_turns: 50,
+            audit_max_entries: nil,
             denied_domains: [],
             audit: :full,
           }
@@ -64,6 +65,11 @@ module Spurline
         def max_turns(n)
           validate_positive_integer!(:max_turns, n)
           @settings[:max_turns] = n
+        end
+
+        def audit_max_entries(n)
+          validate_positive_integer!(:audit_max_entries, n)
+          @settings[:audit_max_entries] = n
         end
 
         def denied_domains(domains)

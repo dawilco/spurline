@@ -97,6 +97,29 @@ A JSON Schema object describing the tool's input. This schema is sent to the LLM
 
 Properties map directly to keyword arguments in `#call`. If the schema declares `url` and `timeout`, your `#call` signature should be `def call(url:, timeout: nil)`.
 
+#### Marking sensitive tool arguments
+
+You can mark individual parameters as sensitive in the schema:
+
+```ruby
+parameters({
+  type: "object",
+  properties: {
+    to: { type: "string", description: "Recipient" },
+    api_key: { type: "string", description: "SMTP key", sensitive: true },
+  },
+  required: %w[to api_key],
+})
+```
+
+When `sensitive: true` is present, Spurline redacts that field from:
+
+- audit log `:tool_call` argument payloads
+- session turn `tool_calls` argument payloads
+- streaming `:tool_start` chunk metadata
+
+Redaction uses placeholders like `[REDACTED:api_key]`, preserving field identity without storing the secret value.
+
 ### `requires_confirmation`
 
 ```ruby

@@ -17,6 +17,7 @@ Spurline.configure do |c|
   c.default_model = :claude_sonnet
   c.log_level     = :info
   c.audit_mode    = :full
+  c.audit_max_entries = nil
   c.permissions_file = "config/permissions.yml"
 end
 ```
@@ -29,6 +30,7 @@ Spurline.config.session_store_path
 Spurline.config.default_model   # => :claude_sonnet
 Spurline.config.log_level       # => :info
 Spurline.config.audit_mode      # => :full
+Spurline.config.audit_max_entries # => nil
 Spurline.config.permissions_file
 ```
 
@@ -43,6 +45,7 @@ Spurline.config.permissions_file
 | `default_model` | `:claude_sonnet` | The LLM model identifier agents use when none is specified per-agent. |
 | `log_level` | `:info` | Framework logging verbosity. One of `:debug`, `:info`, `:warn`, `:error`. |
 | `audit_mode` | `:full` | Controls how much the audit log records. `:full` records everything. |
+| `audit_max_entries` | `nil` | Optional in-memory audit retention cap (FIFO eviction when set). |
 | `permissions_file` | `"config/permissions.yml"` | Tool permission YAML path loaded by the tools DSL. |
 | `brave_api_key` | `nil` | Optional API key config used by tools/adapters that support Brave search. |
 
@@ -120,6 +123,7 @@ Spurline.configure do |c|
   c.default_model = :claude_sonnet
   c.log_level     = :warn
   c.audit_mode    = :full
+  c.audit_max_entries = 5000
   c.permissions_file = "config/permissions.yml"
 end
 ```
@@ -148,6 +152,8 @@ The audit log recognizes these event types:
 |-------|---------------|
 | `:turn_start` | A new conversation turn begins |
 | `:turn_end` | A turn completes |
+| `:llm_request` | The framework is about to call the LLM (request shape only) |
+| `:llm_response` | The framework received an LLM response (response shape only) |
 | `:tool_call` | A tool is invoked |
 | `:tool_result` | A tool returns a result |
 | `:error` | An error occurs during the session |
@@ -159,6 +165,8 @@ The audit log recognizes these event types:
 
 These are defined in `Spurline::Audit::Log::KNOWN_EVENTS`.
 
+Tool-call arguments in audit entries are automatically redacted for sensitive fields (schema-declared and pattern-detected), using placeholders such as `[REDACTED:api_key]`.
+
 ### Querying the Log
 
 Filter entries by event type:
@@ -169,6 +177,10 @@ audit_log.events_of_type(:tool_call)
 
 audit_log.tool_calls    # shorthand for events_of_type(:tool_call)
 audit_log.errors        # shorthand for events_of_type(:error)
+audit_log.llm_requests  # shorthand for events_of_type(:llm_request)
+audit_log.llm_responses # shorthand for events_of_type(:llm_response)
+audit_log.turn_events(3)
+audit_log.replay_timeline
 ```
 
 ### Aggregate Metrics
@@ -187,6 +199,7 @@ audit_log.summary
 # => {
 #      session_id: "abc-123",
 #      total_events: 14,
+#      evicted_entries: 0,
 #      turns: 3,
 #      tool_calls: 5,
 #      errors: 0,
@@ -210,6 +223,10 @@ Every entry recorded by the audit log has this shape:
 ```
 
 The `elapsed_ms` field measures time since the audit log was created, not since the previous entry.
+
+### Retention Behavior
+
+If `audit_max_entries` is configured (globally or via agent guardrails), the in-memory log retains only the newest N entries and evicts oldest-first. `summary[:total_events]` includes evicted entries.
 
 ---
 
