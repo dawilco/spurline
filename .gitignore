@@ -1,0 +1,10 @@
+/.bundle/
+/vendor/bundle
+/tmp/
+/coverage/
+/.claude/
+/pkg/
+*.gem
+Gemfile.lock
+.byebug_history
+.DS_Store
