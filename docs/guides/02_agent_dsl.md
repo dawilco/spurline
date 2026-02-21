@@ -62,9 +62,11 @@ The block receives a `PersonaConfig` object evaluated with `instance_eval`:
 | Method                       | Default | Description                                       |
 |------------------------------|---------|---------------------------------------------------|
 | `system_prompt(text)`        | `""`    | The system prompt sent to the LLM                 |
-| `inject_date(bool)`          | `false` | Structure exists; not wired to runtime in Phase 1  |
-| `inject_user_context(bool)`  | `false` | Structure exists; not wired to runtime in Phase 1  |
-| `inject_agent_context(bool)` | `false` | Structure exists; not wired to runtime in Phase 1  |
+| `inject_date(bool)`          | `false` | Adds `Current date: YYYY-MM-DD` as a system supplement at assembly time |
+| `inject_user_context(bool)`  | `false` | Adds `Current user: ...` when `session.user` is present |
+| `inject_agent_context(bool)` | `false` | Adds agent metadata (class name, available tools) as a system supplement |
+
+Supplements are injected dynamically on each run/chat turn during context assembly (not at class load time). This keeps date/user/agent fields current while the compiled persona remains immutable.
 
 ### Multiple Personas
 

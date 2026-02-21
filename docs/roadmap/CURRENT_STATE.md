@@ -114,9 +114,15 @@ OpenAI and Gemini adapters are **not yet built**. The `Base` adapter interface i
 
 Generated projects now include `config/spurline.rb`, pass `spur check` immediately, and support encrypted credentials via `config/credentials.enc.yml` + `config/master.key`.
 
-### Personas — **Partial**
+### Personas — **Built**
 
-`Persona::Base` and `Persona::Registry`. DSL for declaring system prompts. Date and user context injection flags exist in DSL but not yet wired through to prompt assembly.
+`Persona::Base` and `Persona::Registry` are implemented, including DSL-defined injection flags wired end-to-end through runtime prompt assembly.
+
+- `inject_date` adds a dynamic `Current date: ...` system supplement at assembly time
+- `inject_user_context` adds `Current user: ...` when `session.user` exists
+- `inject_agent_context` adds agent metadata (class name and available tools)
+
+Supplements are framework-generated `:system` trust content and are recomputed per turn.
 
 ---
 

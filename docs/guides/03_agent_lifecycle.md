@@ -58,7 +58,7 @@ agent = ResearchAgent.new(user: "alice", session_id: "abc-123", persona: :defaul
 
 1. **Session loaded or created.** `Session.load_or_create` either restores an existing session by ID or creates a new one. The session holds turn history and is the unit of persistence.
 
-2. **Persona resolved.** The persona name (`:default` if omitted) is looked up in the class-level persona configs set by the DSL. The resolved system prompt becomes a frozen `Security::Content` object with `trust: :system`. It never changes after this point.
+2. **Persona resolved.** The persona name (`:default` if omitted) is looked up in the class-level persona configs set by the DSL. The resolved base system prompt becomes a frozen `Security::Content` object with `trust: :system`. Injection flags (`inject_date`, `inject_user_context`, `inject_agent_context`) are also compiled and read later at assembly time.
 
 3. **Memory::Manager created.** Configured from the class-level memory DSL settings.
 
@@ -70,7 +70,7 @@ agent = ResearchAgent.new(user: "alice", session_id: "abc-123", persona: :defaul
 
 7. **Audit::Log created.** Bound to the session with tool registry awareness for argument redaction and optional retention (`max_entries`) configuration.
 
-8. **ContextAssembler created.** Responsible for merging persona, memory, and input into a content array for the pipeline.
+8. **ContextAssembler created.** Responsible for merging persona, optional persona supplements, memory, and input into a content array for the pipeline.
 
 9. **State set to `:ready`.** The agent is now wired up and waiting for input.
 
@@ -91,7 +91,7 @@ The call loop lives in `Lifecycle::Runner#run` (`lib/spurline/lifecycle/runner.r
 ```
 1. session.start_turn(input:)
 2. loop:
-   a. ContextAssembler.assemble   -- persona + memory + input --> Content array
+   a. ContextAssembler.assemble   -- persona + supplements + memory + input --> Content array
    b. ContextPipeline.process     -- scan, filter, fence --> rendered strings
    c. adapter.stream              -- send to LLM, receive chunks
       - record :llm_request and :llm_response audit events (shape only)
@@ -111,9 +111,13 @@ The call loop lives in `Lifecycle::Runner#run` (`lib/spurline/lifecycle/runner.r
 
 ### Context assembly
 
-The assembler merges three sources into a `Content` array:
+The assembler merges up to four sources into a `Content` array:
 
 - **Persona** -- the system prompt, `trust: :system`
+- **Persona supplements** -- optional system content generated at runtime:
+  - `Current date: ...` when `inject_date` is enabled
+  - `Current user: ...` when `inject_user_context` is enabled and `session.user` exists
+  - agent metadata when `inject_agent_context` is enabled
 - **Memory** -- prior turns from short-term memory
 - **Input** -- the current user message, `trust: :user`
 
@@ -316,7 +320,7 @@ Here is the complete flow for a single `#run` call where the LLM uses one tool b
       State: :running
 
 3.  Call loop iteration 1
-      Assembler: [persona, memory, input] --> Content array
+      Assembler: [persona, supplements, memory, input] --> Content array
       Pipeline: scan, filter, fence --> rendered strings
       Adapter.stream --> LLM returns tool_call(:calculator, expression: "2+2")
       Buffer detects tool call
@@ -326,7 +330,7 @@ Here is the complete flow for a single `#run` call where the LLM uses one tool b
       :tool_end chunk yielded
 
 4.  Call loop iteration 2
-      Assembler: [persona, memory, tool_result] --> Content array
+      Assembler: [persona, supplements, memory, tool_result] --> Content array
       Pipeline: scan, filter, fence --> rendered strings
       Adapter.stream --> LLM returns text "The answer is 4."
       Text chunks yielded to caller as they arrive
