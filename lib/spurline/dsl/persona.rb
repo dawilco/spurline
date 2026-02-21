@@ -30,29 +30,43 @@ module Spurline
 
       # Internal config object for persona DSL blocks.
       class PersonaConfig
-        attr_reader :system_prompt_text, :inject_date, :inject_user_context, :inject_agent_context
+        attr_reader :system_prompt_text
 
         def initialize
           @system_prompt_text = ""
-          @inject_date = false
-          @inject_user_context = false
-          @inject_agent_context = false
+          @_inject_date = false
+          @_inject_user_context = false
+          @_inject_agent_context = false
         end
 
         def system_prompt(text)
           @system_prompt_text = text
         end
 
+        # DSL setters (used inside persona blocks)
         def inject_date(val = true)
-          @inject_date = val
+          @_inject_date = val
         end
 
         def inject_user_context(val = true)
-          @inject_user_context = val
+          @_inject_user_context = val
         end
 
         def inject_agent_context(val = true)
-          @inject_agent_context = val
+          @_inject_agent_context = val
+        end
+
+        # Predicate readers (used when compiling persona config)
+        def date_injected?
+          @_inject_date
+        end
+
+        def user_context_injected?
+          @_inject_user_context
+        end
+
+        def agent_context_injected?
+          @_inject_agent_context
         end
       end
     end

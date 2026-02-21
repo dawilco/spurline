@@ -108,6 +108,7 @@ module Spurline
         persona: @persona,
         tools_schema: build_tools_schema,
         adapter_config: self.class.model_config || {},
+        agent_context: build_agent_context,
         &chunk_handler
       )
 
@@ -137,7 +138,12 @@ module Spurline
 
       Persona::Base.new(
         name: name,
-        system_prompt: config.system_prompt_text
+        system_prompt: config.system_prompt_text,
+        injection_config: {
+          inject_date: config.date_injected?,
+          inject_user_context: config.user_context_injected?,
+          inject_agent_context: config.agent_context_injected?,
+        }
       )
     end
 
@@ -184,6 +190,16 @@ module Spurline
         tool = tool_class.is_a?(Class) ? tool_class.new : tool_class
         tool.to_schema
       end
+    end
+
+    def build_agent_context
+      tool_config = self.class.tool_config
+      tool_names = tool_config ? tool_config[:names] : []
+
+      {
+        class_name: self.class.name || self.class.to_s,
+        tool_names: tool_names.map(&:to_s),
+      }
     end
 
     def run_hook(hook_type, *args)

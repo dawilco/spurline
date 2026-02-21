@@ -405,6 +405,24 @@ RSpec.describe Spurline::Agent do
     end
   end
 
+  describe "persona injections" do
+    it "includes date in the system prompt sent to the adapter" do
+      klass = agent_class
+      klass.persona(:default) do
+        system_prompt "You are a helpful test assistant."
+        inject_date true
+      end
+
+      agent = klass.new
+      agent.use_stub_adapter(responses: [stub_text("Done")])
+      agent.run("Input") { |_chunk| }
+
+      adapter = agent.instance_variable_get(:@adapter)
+      system_prompt = adapter.calls.first[:system]
+      expect(system_prompt).to include("Current date:")
+    end
+  end
+
   describe "guardrail validation" do
     it "raises ConfigurationError for invalid injection_filter" do
       expect {

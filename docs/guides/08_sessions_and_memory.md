@@ -143,12 +143,22 @@ The `last_evicted` property tracks the most recently evicted turn. `window_overf
 `Memory::ContextAssembler` builds the ordered array of `Security::Content` objects sent to the LLM. Assembly order is fixed:
 
 1. **Persona system prompt** (trust: `:system`) -- the agent's identity and instructions.
-2. **Recent conversation history** (trust: inherited) -- input/output pairs from the memory window, preserving original trust levels.
-3. **Current user input** (trust: `:user`) -- the message being processed now.
+2. **Persona supplements** (trust: `:system`, optional) -- runtime additions controlled by persona injection flags:
+   - date (`inject_date`)
+   - current user (`inject_user_context`, only when `session.user` exists)
+   - agent metadata (`inject_agent_context`)
+3. **Recent conversation history** (trust: inherited) -- input/output pairs from the memory window, preserving original trust levels.
+4. **Current user input** (trust: `:user`) -- the message being processed now.
 
 ```ruby
 assembler = Memory::ContextAssembler.new
-contents = assembler.assemble(input: wrapped_input, memory: memory_manager, persona: persona)
+contents = assembler.assemble(
+  input: wrapped_input,
+  memory: memory_manager,
+  persona: persona,
+  session: session,
+  agent_context: { class_name: "MyAgent", tool_names: %w[web_search] }
+)
 # => [Content(:system), Content(:user), Content(:user), ...]
 ```
 

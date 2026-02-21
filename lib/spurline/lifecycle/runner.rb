@@ -22,7 +22,7 @@ module Spurline
       end
 
       # ASYNC-READY: the main call loop
-      def run(input:, session:, persona:, tools_schema:, adapter_config:, &chunk_handler)
+      def run(input:, session:, persona:, tools_schema:, adapter_config:, agent_context: nil, &chunk_handler)
         turn = session.start_turn(input: input)
         @audit.record(:turn_start, turn: turn.number)
 
@@ -34,7 +34,9 @@ module Spurline
           contents = @assembler.assemble(
             input: input,
             memory: @memory,
-            persona: persona
+            persona: persona,
+            session: session,
+            agent_context: agent_context
           )
 
           # 2. Process through security pipeline

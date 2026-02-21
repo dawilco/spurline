@@ -168,6 +168,97 @@ RSpec.describe Spurline::Memory::ContextAssembler do
     expect(result.first.text).to eq("Hello!")
   end
 
+  it "injects date when inject_date is true" do
+    persona = Spurline::Persona::Base.new(
+      name: :default,
+      system_prompt: "System.",
+      injection_config: { inject_date: true }
+    )
+    memory = Spurline::Memory::Manager.new
+    input = content("Hello!")
+
+    result = assembler.assemble(input: input, memory: memory, persona: persona)
+
+    date_content = result.find { |c| c.source.include?("injection:date") }
+    expect(date_content).not_to be_nil
+    expect(date_content.trust).to eq(:system)
+    expect(date_content.text).to include(Date.today.iso8601)
+  end
+
+  it "does not inject date when inject_date is false" do
+    persona = Spurline::Persona::Base.new(name: :default, system_prompt: "System.")
+    memory = Spurline::Memory::Manager.new
+    input = content("Hello!")
+
+    result = assembler.assemble(input: input, memory: memory, persona: persona)
+
+    expect(result.none? { |c| c.source.include?("injection:date") }).to be true
+  end
+
+  it "injects user context when session has user" do
+    persona = Spurline::Persona::Base.new(
+      name: :default,
+      system_prompt: "System.",
+      injection_config: { inject_user_context: true }
+    )
+    memory = Spurline::Memory::Manager.new
+    input = content("Hello!")
+    session = instance_double(Spurline::Session::Session, user: "alice")
+
+    result = assembler.assemble(
+      input: input,
+      memory: memory,
+      persona: persona,
+      session: session
+    )
+
+    user_content = result.find { |c| c.source.include?("injection:user_context") }
+    expect(user_content).not_to be_nil
+    expect(user_content.text).to include("alice")
+  end
+
+  it "skips user context when session user is nil" do
+    persona = Spurline::Persona::Base.new(
+      name: :default,
+      system_prompt: "System.",
+      injection_config: { inject_user_context: true }
+    )
+    memory = Spurline::Memory::Manager.new
+    input = content("Hello!")
+    session = instance_double(Spurline::Session::Session, user: nil)
+
+    result = assembler.assemble(
+      input: input,
+      memory: memory,
+      persona: persona,
+      session: session
+    )
+
+    expect(result.none? { |c| c.source.include?("injection:user_context") }).to be true
+  end
+
+  it "injects agent context when enabled" do
+    persona = Spurline::Persona::Base.new(
+      name: :default,
+      system_prompt: "System.",
+      injection_config: { inject_agent_context: true }
+    )
+    memory = Spurline::Memory::Manager.new
+    input = content("Hello!")
+
+    result = assembler.assemble(
+      input: input,
+      memory: memory,
+      persona: persona,
+      agent_context: { class_name: "MyAgent", tool_names: %w[web_search calc] }
+    )
+
+    agent_content = result.find { |c| c.source.include?("injection:agent_context") }
+    expect(agent_content).not_to be_nil
+    expect(agent_content.text).to include("Agent: MyAgent")
+    expect(agent_content.text).to include("Available tools: web_search, calc")
+  end
+
   describe "#estimate_tokens" do
     it "estimates token count" do
       contents = [content("Hello world")] # 11 chars ~= 3 tokens

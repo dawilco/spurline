@@ -53,13 +53,13 @@ The persona defines the system prompt and context injections. It is versioned an
 ```ruby
 persona :assistant do
   system_prompt "You are a helpful assistant for Acme Corp."
-  inject_date          true   # appends current date to system prompt
-  inject_user_context  true   # appends current_user metadata if available
-  inject_agent_context true   # appends agent name, version, capabilities
+  inject_date          true   # adds "Current date: YYYY-MM-DD"
+  inject_user_context  true   # adds current user when session.user is present
+  inject_agent_context true   # adds agent class name and available tools
 end
 ```
 
-The persona block is evaluated at class load and compiled into a `Content` object with trust level `:system`. It never passes through the injection scanner — it is trusted by definition. Attempting to modify it at runtime raises `PersonaFrozenError`.
+The persona block is evaluated at class load and compiled into a `Content` object with trust level `:system`. Injection supplements are generated later at assembly time, per turn, as framework-owned `:system` content. System content never passes through injection scanning.
 
 Multiple personas can be defined and selected at instantiation:
 
