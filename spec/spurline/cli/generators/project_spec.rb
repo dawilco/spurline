@@ -55,6 +55,12 @@ RSpec.describe Spurline::CLI::Generators::Project do
     expect(content).to include("config.permissions_file = \"config/permissions.yml\"")
   end
 
+  it "includes Postgres option in initializer comments" do
+    generate!
+    content = File.read(File.join(project_path, "config", "spurline.rb"))
+    expect(content).to include("postgres")
+  end
+
   it "creates ApplicationAgent" do
     generate!
     content = File.read(File.join(project_path, "app", "agents", "application_agent.rb"))
@@ -66,6 +72,15 @@ RSpec.describe Spurline::CLI::Generators::Project do
     generate!
     content = File.read(File.join(project_path, "app", "agents", "assistant_agent.rb"))
     expect(content).to include("class AssistantAgent < ApplicationAgent")
+  end
+
+  it "creates example agent spec" do
+    generate!
+    path = File.join(project_path, "spec", "agents", "assistant_agent_spec.rb")
+    expect(File.exist?(path)).to be true
+
+    content = File.read(path)
+    expect(content).to include("RSpec.describe AssistantAgent")
   end
 
   it "creates spec_helper.rb" do
@@ -92,6 +107,19 @@ RSpec.describe Spurline::CLI::Generators::Project do
     generate!
     content = File.read(File.join(project_path, ".ruby-version")).strip
     expect(content).to eq("3.4.5")
+  end
+
+  it "creates .env.example" do
+    generate!
+    content = File.read(File.join(project_path, ".env.example"))
+    expect(content).to include("ANTHROPIC_API_KEY")
+  end
+
+  it "creates README.md" do
+    generate!
+    content = File.read(File.join(project_path, "README.md"))
+    expect(content).to include("Spurline")
+    expect(content).to include("spur check")
   end
 
   it "exits if directory already exists" do

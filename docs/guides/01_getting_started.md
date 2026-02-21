@@ -44,7 +44,10 @@ my_app/
   app/tools/                        # custom tools go here
   config/spurline.rb                # boot-time framework config
   config/permissions.yml            # tool access control
+  spec/agents/assistant_agent_spec.rb # starter spec for generated assistant
   spec/                             # agents/ and tools/ subdirs
+  .env.example                      # environment template
+  README.md                         # project-local quickstart
   Gemfile
   Rakefile
 ```
@@ -59,6 +62,8 @@ gem "spurline-core", path: "../spurline"
 ```sh
 cd my_app
 bundle install
+cp .env.example .env
+# Edit .env and set ANTHROPIC_API_KEY
 bundle exec spur check
 ```
 
@@ -98,6 +103,7 @@ end
 class AssistantAgent < ApplicationAgent
   persona(:default) do
     system_prompt "You are a helpful assistant for the MyApp project."
+    inject_date true
   end
 end
 ```
@@ -211,6 +217,14 @@ end
 ```
 
 Every tool inherits from `Spurline::Tools::Base` and declares `tool_name`, `description`, and `parameters` (JSON Schema). The `#call` method receives keyword arguments and returns a string. That string is automatically wrapped with trust level `:external` and XML-fenced when it reaches the LLM. Tools are leaf nodes -- they cannot invoke other tools. See [Building Tools](05_building_tools.md) for the full contract.
+
+If you generate another agent, Spurline now scaffolds both class and spec:
+
+```sh
+bundle exec spur generate agent researcher
+# creates app/agents/researcher_agent.rb
+# creates spec/agents/researcher_agent_spec.rb
+```
 
 ---
 
