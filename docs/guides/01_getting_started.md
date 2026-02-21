@@ -62,11 +62,16 @@ bundle install
 bundle exec spur check
 ```
 
-If you want to run against Claude instead of the stub adapter, add credentials:
+If you want to run against a live provider instead of the stub adapter, add credentials:
 
 ```sh
 bundle exec spur credentials:edit
 ```
+
+Set the matching key for your model:
+
+- Claude models (`:claude_sonnet`, `:claude_opus`, `:claude_haiku`) use `ANTHROPIC_API_KEY`
+- OpenAI models (`:openai_gpt4o`, `:openai_gpt4o_mini`, `:openai_o3_mini`) use `OPENAI_API_KEY`
 
 You can also open an interactive REPL with the full project loaded:
 
@@ -106,7 +111,7 @@ The DSL methods at a glance:
 
 | Method             | Purpose                                                  |
 |--------------------|----------------------------------------------------------|
-| `use_model`        | Which LLM adapter to use (`:claude_sonnet`)              |
+| `use_model`        | Which LLM adapter to use (`:claude_sonnet`, `:openai_gpt4o`) |
 | `persona`          | Named system prompt; `:default` is used when unspecified |
 | `tools`            | Which registered tools the agent can invoke              |
 | `guardrails`       | Security constraints: tool limits, injection scanning    |

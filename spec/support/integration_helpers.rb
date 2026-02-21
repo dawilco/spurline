@@ -2,6 +2,7 @@
 
 module IntegrationHelpers
   INTEGRATION_MODEL = "claude-haiku-4-5-20251001"
+  INTEGRATION_OPENAI_MODEL = "gpt-4o-mini"
   INTEGRATION_MAX_TOKENS = 256
 
   class EchoTool < Spurline::Tools::Base
@@ -58,17 +59,23 @@ module IntegrationHelpers
   end
 
   def with_integration_cassette(name, &block)
-    ensure_anthropic_api_key_for_recording!(name)
+    ensure_api_key_for_recording!(name, provider: :anthropic)
+    VCR.use_cassette(name, &block)
+  end
+
+  def with_openai_integration_cassette(name, &block)
+    ensure_api_key_for_recording!(name, provider: :openai)
     VCR.use_cassette(name, &block)
   end
 
   private
 
-  def ensure_anthropic_api_key_for_recording!(cassette_name)
+  def ensure_api_key_for_recording!(cassette_name, provider:)
     return if File.exist?(cassette_file_path(cassette_name))
-    return unless ENV.fetch("ANTHROPIC_API_KEY", "").strip.empty?
+    env_key = provider == :openai ? "OPENAI_API_KEY" : "ANTHROPIC_API_KEY"
+    return unless ENV.fetch(env_key, "").strip.empty?
 
-    skip("ANTHROPIC_API_KEY is required to record cassette #{cassette_name.inspect}")
+    skip("#{env_key} is required to record cassette #{cassette_name.inspect}")
   end
 
   def cassette_file_path(cassette_name)

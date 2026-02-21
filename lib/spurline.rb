@@ -28,6 +28,7 @@ module Spurline
         loader.inflector.inflect("pii_filter" => "PIIFilter")
         loader.inflector.inflect("cli" => "CLI")
         loader.inflector.inflect("sqlite" => "SQLite")
+        loader.inflector.inflect("open_ai" => "OpenAI")
         loader.ignore("#{__dir__}/spurline/errors.rb")
         loader
       end

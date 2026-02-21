@@ -24,6 +24,7 @@ begin
 
     # Filter out API keys
     config.filter_sensitive_data("<ANTHROPIC_API_KEY>") { ENV.fetch("ANTHROPIC_API_KEY", "test-key") }
+    config.filter_sensitive_data("<OPENAI_API_KEY>") { ENV.fetch("OPENAI_API_KEY", "test-key") }
 
     # Only allow cassette playback in CI, record in development
     config.default_cassette_options = {

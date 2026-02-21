@@ -64,11 +64,25 @@ This command manages:
 - `config/credentials.enc.yml` (encrypted payload)
 - `config/master.key` (local secret, gitignored)
 
-At runtime, Claude adapter API key resolution order is:
+At runtime, adapter API key resolution order is provider-specific:
+
+Claude:
 
 1. explicit `api_key:` parameter
 2. `ENV["ANTHROPIC_API_KEY"]`
 3. `Spurline.credentials["anthropic_api_key"]`
+
+OpenAI:
+
+1. explicit `api_key:` parameter
+2. `ENV["OPENAI_API_KEY"]`
+3. `Spurline.credentials["openai_api_key"]`
+
+Built-in adapter aliases:
+
+- `:claude_sonnet`, `:claude_opus`, `:claude_haiku`
+- `:openai_gpt4o`, `:openai_gpt4o_mini`, `:openai_o3_mini`
+- `:stub`
 
 You can reload credentials during a process with:
 

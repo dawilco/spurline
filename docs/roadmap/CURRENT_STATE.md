@@ -96,9 +96,9 @@ What is still missing: tamper-evident storage and persistent backend-level reten
 
 ### LLM Adapters — **Partial**
 
-`Adapters::Claude` is the primary implementation and now uses Anthropic's official `anthropic` gem with typed streaming events. `Adapters::Registry` handles model name resolution. `Adapters::StubAdapter` for testing (supports chunked responses, tool call responses).
+`Adapters::Claude` is the primary implementation and now uses Anthropic's official `anthropic` gem with typed streaming events. `Adapters::OpenAI` is implemented with `ruby-openai`, including streaming text/tool-call normalization compatible with `Streaming::Buffer`. `Adapters::Registry` handles model name resolution. `Adapters::StubAdapter` is used for deterministic test coverage (supports chunked responses and tool call responses).
 
-OpenAI and Gemini adapters are **not yet built**. The `Base` adapter interface is defined. RubyLLM remains an evaluation path for later multi-provider expansion.
+Gemini adapter is **not yet built**. The `Base` adapter interface is defined. RubyLLM remains an evaluation path for later multi-provider expansion.
 
 ### CLI — **Built**
 
