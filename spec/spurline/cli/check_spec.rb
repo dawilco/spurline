@@ -29,6 +29,7 @@ RSpec.describe Spurline::CLI::Check do
     expect(results).to all(be_a(Spurline::CLI::Checks::CheckResult))
     expect(results.count { |result| result.status == :fail }).to eq(0)
     expect(results.count { |result| result.status == :warn }).to eq(1)
+    expect(results.find { |result| result.name == :project_structure }&.status).to eq(:pass)
     expect(results.find { |result| result.name == :credentials }&.status).to eq(:warn)
   end
 
@@ -47,6 +48,8 @@ RSpec.describe Spurline::CLI::Check do
     FileUtils.mkdir_p(File.join(project_root, "config"))
     File.write(File.join(project_root, "Gemfile"), "source \"https://rubygems.org\"\n")
     File.write(File.join(project_root, "config", "permissions.yml"), "tools: {}\n")
+    File.write(File.join(project_root, "config", "spurline.rb"), "require \"spurline\"\n")
+    File.write(File.join(project_root, ".env.example"), "ANTHROPIC_API_KEY=placeholder\n")
 
     namespace = "CheckSpec#{rand(1_000_000)}"
     File.write(File.join(project_root, "app", "agents", "application_agent.rb"), <<~RUBY)

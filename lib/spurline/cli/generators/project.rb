@@ -30,9 +30,12 @@ module Spurline
           create_application_agent!
           create_example_agent!
           create_spec_helper!
+          create_example_agent_spec!
           create_permissions!
           create_gitignore!
           create_ruby_version!
+          create_env_example!
+          create_readme!
 
           puts ""
           puts "Project '#{name}' created successfully!"
@@ -66,8 +69,12 @@ module Spurline
 
             gem "spurline-core"
 
+            # Uncomment to add bundled spurs:
+            # gem "spurline-web-search"
+
             group :development, :test do
               gem "rspec"
+              # gem "webmock"   # Useful for testing tools that make HTTP calls
             end
           RUBY
         end
@@ -93,22 +100,25 @@ module Spurline
               config.session_store = :memory
               config.permissions_file = "config/permissions.yml"
 
-              # Uncomment for durable sessions:
+              # Durable sessions (survives process restart):
               # config.session_store = :sqlite
               # config.session_store_path = "tmp/spurline_sessions.db"
+
+              # PostgreSQL sessions (for team deployments):
+              # config.session_store = :postgres
+              # config.session_store_postgres_url = "postgresql://localhost/my_app_development"
             end
           RUBY
         end
 
         def create_application_agent!
-          class_name = classify(name)
           write_file("app/agents/application_agent.rb", <<~RUBY)
             # frozen_string_literal: true
 
             require "spurline"
 
             # The shared base class for all agents in this project.
-            # Configure defaults here — individual agents inherit and override.
+            # Configure defaults here -- individual agents inherit and override.
             class ApplicationAgent < Spurline::Agent
               use_model :claude_sonnet
 
@@ -117,6 +127,20 @@ module Spurline
                 injection_filter :strict
                 pii_filter :off
               end
+
+              # Uncomment to add a default persona with date injection:
+              # persona(:default) do
+              #   system_prompt "You are a helpful assistant."
+              #   inject_date true
+              # end
+
+              # Uncomment to add lifecycle hooks:
+              # on_start  { |session| puts "Session \#{session.id} started" }
+              # on_finish { |session| puts "Session \#{session.id} finished" }
+              # on_error  { |error| $stderr.puts "Error: \#{error.message}" }
+
+              # Uncomment for memory window customization:
+              # memory :short_term, window: 20
             end
           RUBY
         end
@@ -130,10 +154,13 @@ module Spurline
             class AssistantAgent < ApplicationAgent
               persona(:default) do
                 system_prompt "You are a helpful assistant for the #{classify(name)} project."
+                inject_date true
               end
 
+              # Uncomment to register tools:
               # tools :example_tool
 
+              # Uncomment to override guardrails from ApplicationAgent:
               # guardrails do
               #   max_tool_calls 5
               # end
@@ -162,6 +189,30 @@ module Spurline
 
               config.order = :random
               Kernel.srand config.seed
+            end
+          RUBY
+        end
+
+        def create_example_agent_spec!
+          write_file("spec/agents/assistant_agent_spec.rb", <<~RUBY)
+            # frozen_string_literal: true
+
+            RSpec.describe AssistantAgent do
+              let(:agent) do
+                described_class.new.tap do |a|
+                  a.use_stub_adapter(responses: [stub_text("Hello!")])
+                end
+              end
+
+              describe "#run" do
+                it "streams a response" do
+                  chunks = []
+                  agent.run("Say hello") { |chunk| chunks << chunk }
+
+                  text = chunks.select(&:text?).map(&:text).join
+                  expect(text).to eq("Hello!")
+                end
+              end
             end
           RUBY
         end
@@ -198,6 +249,66 @@ module Spurline
 
         def create_ruby_version!
           write_file(".ruby-version", "3.4.5\n")
+        end
+
+        def create_env_example!
+          write_file(".env.example", <<~TEXT)
+            # Spurline environment variables.
+            # Copy this file to .env and fill in your values.
+            # Never commit .env to version control.
+
+            ANTHROPIC_API_KEY=your_key_here
+
+            # Uncomment for encrypted credentials support:
+            # SPURLINE_MASTER_KEY=your_32_byte_hex_key
+          TEXT
+        end
+
+        def create_readme!
+          write_file("README.md", <<~MARKDOWN)
+            # #{classify(name)}
+
+            A [Spurline](https://github.com/dylanwilcox/spurline) agent project.
+
+            ## Setup
+
+            ```bash
+            bundle install
+            cp .env.example .env
+            # Edit .env with your ANTHROPIC_API_KEY
+            ```
+
+            ## Validate
+
+            ```bash
+            bundle exec spur check
+            ```
+
+            ## Run Tests
+
+            ```bash
+            bundle exec rspec
+            ```
+
+            ## Project Structure
+
+            ```
+            app/
+              agents/           # Agent classes (inherit from ApplicationAgent)
+              tools/            # Tool classes (inherit from Spurline::Tools::Base)
+            config/
+              spurline.rb       # Framework configuration
+              permissions.yml   # Tool permission rules
+            spec/               # RSpec test files
+            ```
+
+            ## Generators
+
+            ```bash
+            spur generate agent researcher    # Creates app/agents/researcher_agent.rb
+            spur generate tool web_scraper    # Creates app/tools/web_scraper.rb + spec
+            ```
+          MARKDOWN
         end
 
         def write_file(relative_path, content)

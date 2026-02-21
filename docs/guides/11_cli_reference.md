@@ -13,16 +13,18 @@ Creates a new Spurline agent project with the full directory scaffold:
 ```
 $ spur new my_agent
 Creating new Spurline project: my_agent
-  create  app/agents/application_agent.rb
-  create  app/agents/assistant_agent.rb
-  create  app/tools/
-  create  config/spurline.rb
-  create  config/permissions.yml
-  create  spec/spec_helper.rb
   create  Gemfile
   create  Rakefile
+  create  config/spurline.rb
+  create  app/agents/application_agent.rb
+  create  app/agents/assistant_agent.rb
+  create  spec/spec_helper.rb
+  create  spec/agents/assistant_agent_spec.rb
+  create  config/permissions.yml
   create  .gitignore
   create  .ruby-version
+  create  .env.example
+  create  README.md
 
 Project 'my_agent' created successfully!
 
@@ -37,15 +39,18 @@ Next steps:
 | File | Purpose |
 |------|---------|
 | `app/agents/application_agent.rb` | Base agent class for the project. All agents inherit from this. |
-| `app/agents/assistant_agent.rb` | Example agent with a default persona. |
+| `app/agents/assistant_agent.rb` | Example agent with a default persona and date injection enabled. |
 | `app/tools/` | Directory for custom tool classes. |
 | `config/spurline.rb` | Boot-time Spurline configuration (`default_model`, session store, permissions file). |
 | `config/permissions.yml` | Tool permission overrides. |
 | `spec/spec_helper.rb` | RSpec config that requires `config/spurline.rb` and loads app files in sorted order. |
+| `spec/agents/assistant_agent_spec.rb` | Starter streaming spec that exercises the generated assistant agent. |
 | `Gemfile` | Declares `spurline-core` and `rspec` dependencies. |
 | `Rakefile` | Default rake task runs `rspec`. |
+| `.env.example` | Environment variable template (`ANTHROPIC_API_KEY` and optional `SPURLINE_MASTER_KEY`). |
 | `.gitignore` | Ignores bundles, tmp, logs, `.env`, `Gemfile.lock`, `config/master.key`, and sqlite session DB files. |
 | `.ruby-version` | Pins the Ruby version. |
+| `README.md` | Project-local setup and command guide. |
 
 Exits with status 1 if the directory already exists or the project name is missing.
 
@@ -53,16 +58,25 @@ Exits with status 1 if the directory already exists or the project name is missi
 
 ### `spur generate agent <name>`
 
-Generates a new agent class file:
+Generates a new agent class file and matching spec:
 
 ```
 $ spur generate agent research
   create  app/agents/research_agent.rb
+  create  spec/agents/research_agent_spec.rb
 ```
 
 The generated agent inherits from `ApplicationAgent` and includes a default persona and commented-out tool and guardrail declarations.
 
-Exits with status 1 if the file already exists or the name is missing.
+The generated spec includes a streaming test scaffold with the stub adapter.
+
+If `spec/agents/<name>_agent_spec.rb` already exists, generator output includes:
+
+```
+  skip    spec/agents/<name>_agent_spec.rb (already exists)
+```
+
+Exits with status 1 if the agent file already exists, the name is missing, or the command is run outside a Spurline project scaffold (`app/agents` + `app/agents/application_agent.rb`).
 
 ---
 
@@ -92,6 +106,7 @@ Validates project configuration and boot-time loadability:
 - model adapter resolution for loaded agent classes
 - credentials presence (`ANTHROPIC_API_KEY` or encrypted credentials key)
 - session store configuration (`:memory` or `:sqlite` prerequisites)
+- recommended files (`config/spurline.rb`, `config/permissions.yml`, `.env.example`) as warnings when missing
 
 Sample output:
 

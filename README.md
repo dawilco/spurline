@@ -64,9 +64,13 @@ Spurline ships `spur`:
 ```bash
 bundle exec spur help
 bundle exec spur new my_app
+bundle exec spur generate agent researcher
+bundle exec spur generate tool web_scraper
 bundle exec spur check
 bundle exec spur console
 ```
+
+`spur new` now includes a project `README.md`, `.env.example`, and a starter `spec/agents/assistant_agent_spec.rb`.
 
 ## Core Concepts
 
