@@ -184,9 +184,13 @@ Only completed turns are restored -- incomplete turns (from a crash mid-response
 
 ## Session Stores
 
-### Store::Memory (Phase 1)
+Spurline currently ships three built-in stores:
 
-The in-memory store is the only store in Phase 1. It is suitable for development and testing but does not persist across process restarts. It is thread-safe via Mutex.
+- `Store::Memory` -- in-process only, no persistence across restarts.
+- `Store::SQLite` -- file-backed durable store for local/dev use.
+- `Store::Postgres` -- durable store for shared/team deployments.
+
+Both SQLite and Postgres stores are thread-safe via a Mutex and expose management helpers (`size`, `clear!`, `ids`) in addition to the base interface.
 
 ### The Store Interface
 
@@ -199,7 +203,14 @@ All stores implement `Session::Store::Base`:
 | `delete`     | Remove a session by ID                         |
 | `exists?`    | Check whether a session ID is in the store     |
 
-The memory store also provides `size`, `clear!`, and `ids` for management. A Postgres store is planned for a future phase.
+### PostgreSQL Setup
+
+When using `:postgres`:
+
+1. Set `config.session_store = :postgres`.
+2. Set `config.session_store_postgres_url`.
+3. Generate the migration SQL with `bundle exec spur generate migration sessions`.
+4. Apply the generated SQL in your database.
 
 ---
 

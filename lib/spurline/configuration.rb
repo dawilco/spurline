@@ -8,6 +8,7 @@ module Spurline
 
     setting :session_store, default: :memory
     setting :session_store_path, default: "tmp/spurline_sessions.db"
+    setting :session_store_postgres_url, default: nil
     setting :default_model, default: :claude_sonnet
     setting :log_level, default: :info
     setting :audit_mode, default: :full

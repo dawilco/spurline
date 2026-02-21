@@ -53,6 +53,8 @@ RSpec.describe Spurline::CLI::Generators::Project do
     content = File.read(File.join(project_path, "config", "spurline.rb"))
     expect(content).to include("Spurline.configure do |config|")
     expect(content).to include("config.permissions_file = \"config/permissions.yml\"")
+    expect(content).to include("config.session_store = :postgres")
+    expect(content).to include("config.session_store_postgres_url")
   end
 
   it "creates ApplicationAgent" do

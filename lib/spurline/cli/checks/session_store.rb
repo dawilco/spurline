@@ -12,6 +12,8 @@ module Spurline
             [pass(:session_store)]
           when :sqlite
             validate_sqlite_store
+          when :postgres
+            validate_postgres_store
           else
             [pass(:session_store, message: "Custom session store configured; skipped built-in validation")]
           end
@@ -46,6 +48,26 @@ module Spurline
           end
         rescue LoadError
           [fail(:session_store, message: "sqlite3 gem is not available for :sqlite session store")]
+        end
+
+        def validate_postgres_store
+          url = Spurline.config.session_store_postgres_url
+          return [fail(:session_store, message: "session_store_postgres_url is not configured")] unless url && !url.strip.empty?
+
+          require "pg"
+
+          conn = PG.connect(url)
+          conn.exec("SELECT 1")
+          conn.close
+          [pass(:session_store)]
+        rescue LoadError
+          [fail(:session_store, message: "pg gem is not available for :postgres session store")]
+        rescue StandardError => e
+          if defined?(PG::Error) && e.is_a?(PG::Error)
+            [fail(:session_store, message: "Cannot connect to PostgreSQL: #{e.message}")]
+          else
+            raise
+          end
         end
 
         def writable_path?(path)

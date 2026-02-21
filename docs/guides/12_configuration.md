@@ -14,6 +14,7 @@ Global settings for Spurline, encrypted credentials, per-agent overrides, and th
 Spurline.configure do |c|
   c.session_store = :memory
   c.session_store_path = "tmp/spurline_sessions.db"
+  c.session_store_postgres_url = nil
   c.default_model = :claude_sonnet
   c.log_level     = :info
   c.audit_mode    = :full
@@ -27,6 +28,7 @@ Read any setting back via `Spurline.config`:
 ```ruby
 Spurline.config.session_store   # => :memory
 Spurline.config.session_store_path
+Spurline.config.session_store_postgres_url
 Spurline.config.default_model   # => :claude_sonnet
 Spurline.config.log_level       # => :info
 Spurline.config.audit_mode      # => :full
@@ -40,8 +42,9 @@ Spurline.config.permissions_file
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `session_store` | `:memory` | Session store backend (`:memory` or `:sqlite`). |
+| `session_store` | `:memory` | Session store backend (`:memory`, `:sqlite`, or `:postgres`). |
 | `session_store_path` | `"tmp/spurline_sessions.db"` | SQLite DB path when `session_store = :sqlite`. |
+| `session_store_postgres_url` | `nil` | PostgreSQL connection URL when `session_store = :postgres` (for example `postgresql://localhost/my_app_development`). |
 | `default_model` | `:claude_sonnet` | The LLM model identifier agents use when none is specified per-agent. |
 | `log_level` | `:info` | Framework logging verbosity. One of `:debug`, `:info`, `:warn`, `:error`. |
 | `audit_mode` | `:full` | Controls how much the audit log records. `:full` records everything. |
@@ -178,6 +181,8 @@ require "spurline"
 Spurline.configure do |c|
   c.session_store = :memory
   c.session_store_path = "tmp/spurline_sessions.db"
+  # c.session_store = :postgres
+  # c.session_store_postgres_url = "postgresql://localhost/my_app_development"
   c.default_model = :claude_sonnet
   c.log_level     = :warn
   c.audit_mode    = :full

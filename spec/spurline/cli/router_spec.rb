@@ -118,5 +118,17 @@ RSpec.describe Spurline::CLI::Router do
       expect(Spurline::CLI::Credentials).to have_received(:new).with(project_root: Dir.pwd)
       expect(credentials).to have_received(:edit!)
     end
+
+    it "routes generate migration to the migration generator" do
+      generator = instance_double(Spurline::CLI::Generators::Migration, generate!: nil)
+      allow(Spurline::CLI::Generators::Migration).to receive(:new)
+        .with(name: "sessions")
+        .and_return(generator)
+
+      described_class.run(["generate", "migration", "sessions"])
+
+      expect(Spurline::CLI::Generators::Migration).to have_received(:new).with(name: "sessions")
+      expect(generator).to have_received(:generate!)
+    end
   end
 end

@@ -96,6 +96,10 @@ module Spurline
               # Uncomment for durable sessions:
               # config.session_store = :sqlite
               # config.session_store_path = "tmp/spurline_sessions.db"
+              #
+              # PostgreSQL sessions (for team deployments):
+              # config.session_store = :postgres
+              # config.session_store_postgres_url = "postgresql://localhost/my_app_development"
             end
           RUBY
         end

@@ -54,6 +54,10 @@ module Spurline
   # Add gem "sqlite3" to the application bundle when configuring :sqlite session storage.
   class SQLiteUnavailableError < AgentError; end
 
+  # Raised when the pg gem is unavailable but the Postgres session store is used.
+  # Add gem "pg" to the application bundle when configuring :postgres session storage.
+  class PostgresUnavailableError < AgentError; end
+
   # Raised when persisted session payloads cannot be decoded into Session/Turn objects.
   # This indicates corrupted or incompatible serialized session data.
   class SessionDeserializationError < AgentError; end

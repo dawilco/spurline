@@ -62,6 +62,14 @@ module Spurline
           Spurline::Session::Store::Memory.new
         when :sqlite
           Spurline::Session::Store::SQLite.new(path: Spurline.config.session_store_path)
+        when :postgres
+          url = Spurline.config.session_store_postgres_url
+          unless url && !url.strip.empty?
+            raise Spurline::ConfigurationError,
+              "session_store_postgres_url must be set when using :postgres session store. " \
+              "Set it via Spurline.configure { |c| c.session_store_postgres_url = \"postgresql://...\" }."
+          end
+          Spurline::Session::Store::Postgres.new(url: url)
         else
           return store if store.respond_to?(:save) &&
             store.respond_to?(:load) &&
@@ -70,7 +78,7 @@ module Spurline
 
           raise Spurline::ConfigurationError,
             "Invalid session_store: #{store.inspect}. " \
-            "Use :memory, :sqlite, or an object implementing save/load/delete/exists?."
+            "Use :memory, :sqlite, :postgres, or an object implementing save/load/delete/exists?."
         end
       end
 
