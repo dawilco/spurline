@@ -71,6 +71,29 @@ RSpec.describe Spurline::Agent do
       expect(agent.audit_log).to be_a(Spurline::Audit::Log)
     end
 
+    it "exposes a vault reader" do
+      agent = agent_class.new
+      expect(agent.vault).to be_a(Spurline::Secrets::Vault)
+    end
+
+    it "creates a fresh vault per agent instance" do
+      agent_one = agent_class.new
+      agent_one.vault.store(:api_key, "secret")
+
+      agent_two = agent_class.new
+
+      expect(agent_two.vault.key?(:api_key)).to be false
+    end
+
+    it "wires a secret resolver with the agent vault into the tool runner" do
+      agent = agent_class.new
+      tool_runner = agent.instance_variable_get(:@tool_runner)
+      resolver = tool_runner.instance_variable_get(:@secret_resolver)
+
+      expect(resolver).to be_a(Spurline::Secrets::Resolver)
+      expect(resolver.instance_variable_get(:@vault)).to equal(agent.vault)
+    end
+
     it "uses global audit_max_entries when guardrails do not override it" do
       original = Spurline.config.audit_max_entries
       Spurline.configure { |config| config.audit_max_entries = 2 }

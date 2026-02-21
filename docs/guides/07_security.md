@@ -259,7 +259,8 @@ You do not invoke the pipeline directly. The lifecycle runner calls it as part o
 Tool-call arguments are redacted before they are persisted or streamed:
 
 1. Schema-declared sensitive fields (`sensitive: true` in tool parameter schema)
-2. Pattern fallback for common secret names (`api_key`, `token`, `password`, `secret`, and related variants)
+2. Tool-declared secret names (`secret :api_key` in tool class)
+3. Pattern fallback for common secret names (`api_key`, `token`, `password`, `secret`, and related variants)
 
 Redaction uses reference placeholders like `[REDACTED:api_key]`. This applies to audit entries, session turn tool-call records, and `:tool_start` chunk metadata.
 

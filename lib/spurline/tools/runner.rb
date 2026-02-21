@@ -8,10 +8,11 @@ module Spurline
     class Runner
       attr_reader :registry
 
-      def initialize(registry:, guardrails: {}, permissions: {})
+      def initialize(registry:, guardrails: {}, permissions: {}, secret_resolver: nil)
         @registry = registry
         @guardrails = guardrails
         @permissions = permissions
+        @secret_resolver = secret_resolver
       end
 
       # ASYNC-READY: scheduler param is the async entry point
@@ -28,10 +29,11 @@ module Spurline
         if tool_class.respond_to?(:validate_arguments!)
           tool_class.validate_arguments!(args)
         end
+        args = inject_secrets(tool_class, args)
         raw_result = scheduler.run { tool.call(**args) }
         duration_ms = ((Time.now - started_at) * 1000).round
         filtered_arguments = Audit::SecretFilter.filter(
-          tool_call[:arguments],
+          args,
           tool_name: tool_name,
           registry: @registry
         )
@@ -106,6 +108,23 @@ module Spurline
         return {} unless hash
 
         hash.transform_keys(&:to_sym)
+      end
+
+      def inject_secrets(tool_class, args)
+        return args unless @secret_resolver
+        return args unless tool_class.respond_to?(:declared_secrets)
+
+        secrets = tool_class.declared_secrets
+        return args if secrets.empty?
+
+        injected = args.dup
+        secrets.each do |secret_def|
+          name = secret_def[:name]
+          next if injected.key?(name)
+
+          injected[name] = @secret_resolver.resolve!(name)
+        end
+        injected
       end
 
       def serialize_result(raw_result)

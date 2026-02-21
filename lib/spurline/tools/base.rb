@@ -34,24 +34,43 @@ module Spurline
           end
         end
 
-        # Returns schema-declared sensitive parameter names.
+        # Declares a secret this tool needs injected at execution time.
+        # Secrets are resolved by the framework and are not part of the tool schema.
+        def secret(name, description: nil)
+          @declared_secrets ||= []
+          @declared_secrets << { name: name.to_sym, description: description }
+        end
+
+        # Returns all declared secrets for this class, including inherited ones.
+        def declared_secrets
+          own = @declared_secrets || []
+          if superclass.respond_to?(:declared_secrets)
+            superclass.declared_secrets + own
+          else
+            own
+          end
+        end
+
+        # Returns sensitive argument names from schema metadata and declared secrets.
         #
         # A parameter is treated as sensitive when its schema property includes:
         #   sensitive: true
         def sensitive_parameters
           schema = parameters || {}
           properties = schema[:properties] || schema["properties"] || {}
-          return Set.new unless properties.is_a?(Hash)
-
-          Set.new.tap do |names|
+          schema_sensitive = Set.new
+          if properties.is_a?(Hash)
             properties.each do |name, definition|
               next unless definition.is_a?(Hash)
 
               sensitive = definition[:sensitive]
               sensitive = definition["sensitive"] if sensitive.nil?
-              names << name.to_sym if sensitive
+              schema_sensitive << name.to_sym if sensitive
             end
           end
+
+          secret_names = (declared_secrets || []).map { |secret| secret[:name] }
+          schema_sensitive | Set.new(secret_names)
         end
 
         # Declares that this tool requires confirmation before execution.

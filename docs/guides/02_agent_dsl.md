@@ -102,6 +102,27 @@ tools :web_search,
 
 This registers three tools: `:web_search` (default config), `:file_delete`, and `:database_query`.
 
+### Per-Tool Secret Overrides
+
+Use `secrets:` inside tool config to control how declared tool secrets are resolved for this agent:
+
+```ruby
+tools send_email: {
+  secrets: {
+    sendgrid_api_key: :transactional_sendgrid_key
+  }
+}
+```
+
+In this example, a tool-declared `secret :sendgrid_api_key` resolves from:
+`Spurline.credentials["transactional_sendgrid_key"]` before default lookup.
+
+Override values can be:
+
+- `Symbol` or `String`: credential key mapping
+- `Proc`/`Method`: computed value at runtime
+- Any other literal: used directly
+
 ### Accessing Configuration
 
 ```ruby

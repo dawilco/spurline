@@ -67,4 +67,7 @@ module Spurline
 
   # Raised when encrypted credentials cannot be decrypted (bad key or tampered file).
   class CredentialsDecryptionError < AgentError; end
+
+  # Raised when a required tool secret cannot be resolved from any configured source.
+  class SecretNotFoundError < AgentError; end
 end

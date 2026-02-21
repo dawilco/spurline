@@ -162,11 +162,19 @@ The permission system (`:allowed_roles`, `:requires_confirmation`) exists at the
 
 Idempotency keys for irreversible tool calls are referenced in architecture docs with a code example. No implementation exists. Blocked on: decision about where idempotency keys are stored (session store? separate table?).
 
-### Secret Management — **Partial (basic only)**
+### Secret Management — **Implemented (v1 model)**
 
-The three-tier secret model (framework credentials, tool secrets, runtime vault) is documented in architecture. In practice, the current implementation relies on environment variables for credentials. No vault abstraction, no key rotation, no runtime secret scoping.
+Three-tier secret handling is now implemented for tool execution:
 
-Audit/tool/session leakage for tool-call arguments is now mitigated by default redaction, but full runtime secret lifecycle management is still pending.
+- Framework credentials via encrypted `config/credentials.enc.yml`
+- Tool-declared secrets via `secret :name` on `Tools::Base`
+- Runtime in-memory vault via `agent.vault.store(:name, value)`
+
+Resolution priority is explicit: agent override → runtime vault → credentials → environment fallback.
+
+Audit/tool/session streaming leakage for tool-call arguments is mitigated by default redaction, including tool-declared secret names.
+
+Still pending: key rotation workflows and filtering secrets from arbitrary freeform tool results.
 
 ---
 

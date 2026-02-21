@@ -79,6 +79,64 @@ Spurline.credentials
 
 ---
 
+## Three-Tier Tool Secret Resolution
+
+Spurline resolves tool-declared secrets from multiple sources, highest priority first:
+
+| Priority | Source | Example |
+|---------|--------|---------|
+| 1 | Agent-level override | `tools send_email: { secrets: { sendgrid_api_key: :transactional_sendgrid_key } }` |
+| 2 | Runtime vault (per agent instance) | `agent.vault.store(:sendgrid_api_key, "...")` |
+| 3 | Encrypted credentials | `Spurline.credentials["sendgrid_api_key"]` |
+| 4 | Environment fallback | `ENV["SENDGRID_API_KEY"]` |
+
+If a tool declares a secret and none of these sources resolves it, execution raises `Spurline::SecretNotFoundError`.
+
+### Declaring and Using Tool Secrets
+
+```ruby
+class SendEmail < Spurline::Tools::Base
+  tool_name :send_email
+  parameters({
+    type: "object",
+    properties: { to: { type: "string" } },
+    required: %w[to],
+  })
+  secret :sendgrid_api_key, description: "SendGrid API key"
+
+  def call(to:, sendgrid_api_key:)
+    # sendgrid_api_key is injected by the framework
+    "sent to #{to}"
+  end
+end
+```
+
+### Runtime Vault Example
+
+```ruby
+agent = MailerAgent.new
+agent.vault.store(:sendgrid_api_key, "sg-session-token")
+agent.run("Send the email") { |chunk| puts chunk.text if chunk.text? }
+```
+
+Runtime vault values are in-memory only and not persisted with session turns.
+
+### Agent-Level Secret Override Example
+
+```ruby
+class MailerAgent < Spurline::Agent
+  tools send_email: {
+    secrets: {
+      sendgrid_api_key: :transactional_sendgrid_key
+    }
+  }
+end
+```
+
+This lets one agent map the same tool secret name to a different credential key without changing the tool class.
+
+---
+
 ## Per-Agent Overrides
 
 Global settings are defaults. Individual agents override them through the DSL. The agent's declaration always wins:

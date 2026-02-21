@@ -16,6 +16,7 @@ Spurline is under active development. The core framework is usable and tested, w
 Recent hardening shipped:
 
 - secret redaction for tool-call arguments in audit log, session turns, and stream metadata
+- three-tier tool secret management (agent overrides, runtime vault, encrypted credentials, ENV fallback)
 - structured replay audit events (`:llm_request`, `:llm_response`, `:tool_call`, `:tool_result`)
 - configurable in-memory audit retention (`audit_max_entries`)
 

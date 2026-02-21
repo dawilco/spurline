@@ -92,13 +92,13 @@ Current audit log can leak secrets via tool arguments. Secrets must never appear
 
 ### 1.1 — Secret Management (Three Tiers)
 
-The three-tier model (framework credentials, tool secrets, runtime vault) is designed but not implemented. Current reality: ENV vars.
+Status: implemented.
 
-- Framework credentials: encrypted `config/credentials.yml.enc` (like Rails credentials). `spur credentials:edit` from Milestone 0.3 is the entry point.
-- Tool secrets: declared per-tool, scoped injection, never ambient. `tool :send_email, secrets: [:sendgrid_api_key]`.
-- Runtime vault: in-memory, session-scoped, never logged. For OAuth tokens and credentials provided by the user during a session. Cleared on session end.
+- Framework credentials: encrypted `config/credentials.enc.yml` with `spur credentials:edit`.
+- Tool secrets: declared per tool via `secret :sendgrid_api_key`, injected by framework at execution time.
+- Runtime vault: in-memory, agent-scoped, never serialized. For OAuth/session credentials supplied at runtime.
 
-Secrets that appear in tool arguments must be intercepted and replaced with reference tokens before audit log writes.
+Tool argument redaction is enforced across audit entries, session turn tool-call records, and streaming metadata.
 
 ### 1.2 — Long-Term Memory Adapter
 

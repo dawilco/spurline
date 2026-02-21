@@ -120,6 +120,46 @@ When `sensitive: true` is present, Spurline redacts that field from:
 
 Redaction uses placeholders like `[REDACTED:api_key]`, preserving field identity without storing the secret value.
 
+Declared tool secrets (via `secret`, below) are also treated as sensitive and are redacted automatically.
+
+### `secret`
+
+```ruby
+secret :sendgrid_api_key, description: "SendGrid API key"
+```
+
+Declares a required secret that Spurline injects at tool execution time. This is separate from `parameters`:
+
+- `parameters` are LLM-facing (`to_schema` input)
+- `secret` declarations are framework-facing only (never sent to the LLM)
+
+Declare secrets your tool needs, then accept them as keyword args in `#call`:
+
+```ruby
+class SendEmail < Spurline::Tools::Base
+  tool_name :send_email
+  description "Sends transactional email."
+  parameters({
+    type: "object",
+    properties: {
+      to: { type: "string" },
+      subject: { type: "string" },
+      body: { type: "string" },
+    },
+    required: %w[to subject body],
+  })
+  secret :sendgrid_api_key, description: "SendGrid API key"
+
+  def call(to:, subject:, body:, sendgrid_api_key:)
+    client = Sendgrid::Client.new(api_key: sendgrid_api_key)
+    client.send_email(to: to, subject: subject, body: body)
+    "sent"
+  end
+end
+```
+
+If a declared secret cannot be resolved, execution fails with `Spurline::SecretNotFoundError`.
+
 ### `requires_confirmation`
 
 ```ruby
@@ -224,6 +264,40 @@ end
 ```
 
 This registers `file_delete` with confirmation required and a 30-second timeout, regardless of what the tool class itself declares.
+
+You can also configure per-agent secret overrides for tools:
+
+```ruby
+class MailerAgent < Spurline::Agent
+  tools send_email: {
+    secrets: {
+      sendgrid_api_key: :transactional_sendgrid_key
+    }
+  }
+end
+```
+
+This maps `sendgrid_api_key` to `Spurline.credentials["transactional_sendgrid_key"]` for this agent.
+
+---
+
+## Runtime Vault and Secret Resolution
+
+Every agent instance has an in-memory runtime vault:
+
+```ruby
+agent = MailerAgent.new
+agent.vault.store(:sendgrid_api_key, "sg-session-token")
+```
+
+When a tool declares `secret :sendgrid_api_key`, Spurline resolves it in this order:
+
+1. Agent-level override (`tools ... secrets: { ... }`)
+2. Runtime vault (`agent.vault`)
+3. Encrypted framework credentials (`Spurline.credentials`)
+4. Environment variable (`ENV["SENDGRID_API_KEY"]`)
+
+Runtime vault values are per-agent and ephemeral. They are not serialized into sessions.
 
 ---
 
@@ -344,6 +418,7 @@ Before shipping a tool, verify:
 - [ ] `description` is a clear, specific sentence the LLM can reason about
 - [ ] Destructive or expensive operations use `requires_confirmation true`
 - [ ] External calls use `timeout` to prevent hanging
+- [ ] Required credentials are declared via `secret` (not fetched ambiently inside `#call`)
 - [ ] `#call` raises clear errors for invalid input instead of returning garbage
 - [ ] The tool does not attempt to invoke other tools (ADR-003)
 - [ ] A spec covers the happy path, error cases, and argument validation

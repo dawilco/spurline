@@ -63,6 +63,46 @@ RSpec.describe Spurline::Tools::Base do
         empty_tool = Class.new(described_class)
         expect(empty_tool.sensitive_parameters).to eq(Set.new)
       end
+
+      it "includes declared secret names" do
+        secret_tool = Class.new(described_class) do
+          secret :api_key, description: "API key"
+        end
+
+        expect(secret_tool.sensitive_parameters).to eq(Set[:api_key])
+      end
+    end
+
+    describe ".declared_secrets" do
+      it "returns declared secrets" do
+        secret_tool = Class.new(described_class) do
+          secret :sendgrid_api_key, description: "SendGrid API key"
+        end
+
+        expect(secret_tool.declared_secrets).to eq([
+          { name: :sendgrid_api_key, description: "SendGrid API key" },
+        ])
+      end
+
+      it "handles inheritance" do
+        parent = Class.new(described_class) do
+          secret :parent_secret, description: "Parent secret"
+        end
+
+        child = Class.new(parent) do
+          secret :child_secret, description: "Child secret"
+        end
+
+        expect(child.declared_secrets).to eq([
+          { name: :parent_secret, description: "Parent secret" },
+          { name: :child_secret, description: "Child secret" },
+        ])
+      end
+
+      it "returns empty array when none declared" do
+        empty_tool = Class.new(described_class)
+        expect(empty_tool.declared_secrets).to eq([])
+      end
     end
   end
 
@@ -88,6 +128,28 @@ RSpec.describe Spurline::Tools::Base do
       expect(schema[:name]).to eq(:echo)
       expect(schema[:description]).to eq("Echoes input back")
       expect(schema[:input_schema][:type]).to eq("object")
+    end
+
+    it "does not include declared secrets in input_schema" do
+      secret_schema_tool = Class.new(described_class) do
+        tool_name :secret_schema
+        parameters({
+          type: "object",
+          properties: { to: { type: "string" } },
+          required: %w[to],
+        })
+        secret :api_key, description: "Injected key"
+
+        def call(to:, api_key:)
+          "#{to}:#{api_key}"
+        end
+      end
+
+      schema = secret_schema_tool.new.to_schema
+      properties = schema[:input_schema][:properties]
+
+      expect(properties).to include(:to)
+      expect(properties).not_to include(:api_key)
     end
   end
 

@@ -14,7 +14,7 @@ module Spurline
   #   agent.run("Research competitors") { |chunk| print chunk.text }
   #
   class Agent < Base
-    attr_reader :session, :state, :audit_log
+    attr_reader :session, :state, :audit_log, :vault
 
     def initialize(user: nil, session_id: nil, persona: :default, **opts)
       @user = user
@@ -26,10 +26,18 @@ module Spurline
       )
       @persona = resolve_persona(persona)
       @memory = Memory::Manager.new(config: self.class.memory_config)
+      @vault = Secrets::Vault.new
+
+      secret_resolver = Secrets::Resolver.new(
+        vault: @vault,
+        overrides: resolve_secret_overrides
+      )
+
       @tool_runner = Tools::Runner.new(
         registry: self.class.tool_registry,
         guardrails: guardrail_settings,
-        permissions: self.class.respond_to?(:permissions_config) ? self.class.permissions_config : {}
+        permissions: self.class.respond_to?(:permissions_config) ? self.class.permissions_config : {},
+        secret_resolver: secret_resolver
       )
       @pipeline = Security::ContextPipeline.new(guardrails: guardrail_settings)
       @adapter = resolve_adapter
@@ -181,6 +189,25 @@ module Spurline
     def run_hook(hook_type, *args)
       hooks = self.class.hooks_config[hook_type] || []
       hooks.each { |block| block.call(*args) }
+    end
+
+    def resolve_secret_overrides
+      overrides = {}
+      tool_config = self.class.tool_config
+      return overrides unless tool_config
+
+      tool_config[:configs].each do |_tool_name, config|
+        next unless config.is_a?(Hash)
+
+        secrets = config[:secrets] || config["secrets"]
+        next unless secrets.is_a?(Hash)
+
+        secrets.each do |key, value|
+          overrides[key.to_sym] = value
+        end
+      end
+
+      overrides
     end
 
     def restore_session_memory!
