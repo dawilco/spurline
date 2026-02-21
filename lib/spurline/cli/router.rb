@@ -15,7 +15,7 @@ module Spurline
         "help" => :handle_help,
       }.freeze
 
-      GENERATE_SUBCOMMANDS = %w[agent tool].freeze
+      GENERATE_SUBCOMMANDS = %w[agent tool migration].freeze
 
       def self.run(args)
         new(args).dispatch
@@ -72,6 +72,8 @@ module Spurline
           Generators::Agent.new(name: name).generate!
         when "tool"
           Generators::Tool.new(name: name).generate!
+        when "migration"
+          Generators::Migration.new(name: name).generate!
         end
       end
 
@@ -104,6 +106,7 @@ module Spurline
             spur new <project>           Create a new Spurline agent project
             spur generate agent <name>   Generate a new agent class
             spur generate tool <name>    Generate a new tool class
+            spur generate migration <name> Generate a SQL migration (e.g. sessions)
             spur check                   Validate project configuration
             spur console                 Interactive REPL with project loaded
             spur credentials:edit        Edit encrypted credentials

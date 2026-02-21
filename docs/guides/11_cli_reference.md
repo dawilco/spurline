@@ -96,6 +96,23 @@ Exits with status 1 if the file already exists or the name is missing.
 
 ---
 
+### `spur generate migration <name>`
+
+Generates a built-in SQL migration file:
+
+```
+$ spur generate migration sessions
+  create  db/migrations/20260221163045_create_spurline_sessions.sql
+```
+
+Currently supported migration names:
+
+- `sessions` -- creates the `spurline_sessions` table and indexes for `state` and `agent_class` (PostgreSQL `JSONB` payload column).
+
+Exits with status 1 if the migration name is unknown, missing, or an equivalent Spurline migration already exists.
+
+---
+
 ### `spur check`
 
 Validates project configuration and boot-time loadability:
@@ -105,7 +122,7 @@ Validates project configuration and boot-time loadability:
 - agent file loadability
 - model adapter resolution for loaded agent classes
 - credentials presence (`ANTHROPIC_API_KEY` or encrypted credentials key)
-- session store configuration (`:memory` or `:sqlite` prerequisites)
+- session store configuration (`:memory`, `:sqlite`, and `:postgres` prerequisites)
 - recommended files (`config/spurline.rb`, `config/permissions.yml`, `.env.example`) as warnings when missing
 
 Sample output:
@@ -204,6 +221,7 @@ Commands:
   spur new <project>           Create a new Spurline agent project
   spur generate agent <name>   Generate a new agent class
   spur generate tool <name>    Generate a new tool class
+  spur generate migration <name> Generate a SQL migration (e.g. sessions)
   spur check                   Validate project configuration
   spur console                 Interactive REPL with project loaded
   spur credentials:edit        Edit encrypted credentials
@@ -232,7 +250,7 @@ $ spur new
 Usage: spur new <project_name>
 
 $ spur generate
-Usage: spur generate <agent|tool> <name>
+Usage: spur generate <agent|tool|migration> <name>
 
 $ spur generate agent
 Usage: spur generate agent <name>

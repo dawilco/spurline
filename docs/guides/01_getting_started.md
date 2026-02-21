@@ -339,6 +339,7 @@ bundle exec rspec spec/agents/assistant_agent_spec.rb
 bundle exec spur new <project>            # Scaffold a new project
 bundle exec spur generate agent <name>    # Generate an agent class
 bundle exec spur generate tool <name>     # Generate a tool class + spec
+bundle exec spur generate migration <name> # Generate built-in SQL migration(s)
 bundle exec spur check                     # Validate project configuration
 bundle exec spur console                   # Start IRB with project loaded
 bundle exec spur credentials:edit          # Edit encrypted credentials
