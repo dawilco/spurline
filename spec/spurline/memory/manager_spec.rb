@@ -22,6 +22,53 @@ RSpec.describe Spurline::Memory::Manager do
       expect(manager.recent_turns(2).length).to eq(2)
       expect(manager.recent_turns(2).last.number).to eq(3)
     end
+
+    it "persists evicted turns to long-term memory when window overflows" do
+      long_term = instance_double("LongTermStore", store: nil, retrieve: [], clear!: nil)
+      manager = described_class.new(
+        config: {
+          short_term: { window: 2 },
+          long_term: { adapter: long_term },
+        }
+      )
+
+      turn1 = Spurline::Session::Turn.new(
+        input: Spurline::Security::Content.new(text: "old input", trust: :user, source: "test"),
+        number: 1
+      )
+      turn1.finish!(
+        output: Spurline::Security::Content.new(text: "old output", trust: :operator, source: "llm")
+      )
+      turn2 = Spurline::Session::Turn.new(input: "second", number: 2)
+      turn3 = Spurline::Session::Turn.new(input: "third", number: 3)
+
+      expect(long_term).to receive(:store).with(
+        content: "old input\nold output",
+        metadata: { turn_number: 1 }
+      )
+
+      manager.add_turn(turn1)
+      manager.add_turn(turn2)
+      manager.add_turn(turn3)
+    end
+
+    it "skips persistence when an evicted turn has no meaningful text" do
+      long_term = instance_double("LongTermStore", store: nil, retrieve: [], clear!: nil)
+      manager = described_class.new(
+        config: {
+          short_term: { window: 1 },
+          long_term: { adapter: long_term },
+        }
+      )
+
+      turn1 = Spurline::Session::Turn.new(input: "", number: 1)
+      turn1.finish!(output: "")
+      turn2 = Spurline::Session::Turn.new(input: "two", number: 2)
+
+      expect(long_term).not_to receive(:store)
+      manager.add_turn(turn1)
+      manager.add_turn(turn2)
+    end
   end
 
   describe "#turn_count" do
@@ -43,6 +90,50 @@ RSpec.describe Spurline::Memory::Manager do
 
       manager.clear!
       expect(manager.turn_count).to eq(0)
+    end
+
+    it "delegates clearing to long-term store when configured" do
+      long_term = instance_double("LongTermStore", store: nil, retrieve: [], clear!: nil)
+      manager = described_class.new(config: { long_term: { adapter: long_term } })
+
+      expect(long_term).to receive(:clear!)
+      manager.clear!
+    end
+  end
+
+  describe "#recall" do
+    it "returns empty array when long-term store is not configured" do
+      manager = described_class.new
+      expect(manager.recall(query: "test")).to eq([])
+    end
+
+    it "delegates to long-term store when configured" do
+      recalled = [
+        Spurline::Security::Content.new(
+          text: "remembered",
+          trust: :operator,
+          source: "memory:long_term"
+        ),
+      ]
+      long_term = instance_double("LongTermStore", store: nil, retrieve: recalled, clear!: nil)
+      manager = described_class.new(config: { long_term: { adapter: long_term } })
+
+      expect(manager.recall(query: "remember me", limit: 3)).to eq(recalled)
+      expect(long_term).to have_received(:retrieve).with(query: "remember me", limit: 3)
+    end
+  end
+
+  describe "long-term adapter config validation" do
+    it "raises for unknown adapters" do
+      expect {
+        described_class.new(config: { long_term: { adapter: :redis } })
+      }.to raise_error(Spurline::ConfigurationError, /Unknown long-term memory adapter/)
+    end
+
+    it "raises when :postgres is configured without an embedding model" do
+      expect {
+        described_class.new(config: { long_term: { adapter: :postgres } })
+      }.to raise_error(Spurline::ConfigurationError, /requires an embedding_model/)
     end
   end
 
@@ -156,6 +247,34 @@ RSpec.describe Spurline::Memory::ContextAssembler do
 
     # system prompt + prev input + prev output + new input
     expect(result.length).to eq(4)
+  end
+
+  it "injects recalled long-term memories between persona and history" do
+    persona = Spurline::Persona::Base.new(name: :default, system_prompt: "System.")
+    memory = Spurline::Memory::Manager.new
+
+    recalled_memory = Spurline::Security::Content.new(
+      text: "long-term recall",
+      trust: :operator,
+      source: "memory:long_term"
+    )
+    allow(memory).to receive(:recall).with(query: "new input", limit: 5).and_return([recalled_memory])
+
+    turn = Spurline::Session::Turn.new(input: content("previous input"), number: 1)
+    turn.finish!(output: content("previous output", trust: :operator, source: "llm"))
+    memory.add_turn(turn)
+
+    input = content("new input")
+
+    result = assembler.assemble(input: input, memory: memory, persona: persona)
+
+    expect(result.map(&:text)).to eq([
+      "System.",
+      "long-term recall",
+      "previous input",
+      "previous output",
+      "new input",
+    ])
   end
 
   it "handles nil persona" do

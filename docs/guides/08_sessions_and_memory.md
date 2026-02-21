@@ -97,7 +97,7 @@ turn.summary      # => {number: 1, tool_calls: 2, duration_ms: 2100, complete: t
 
 ## Memory
 
-Memory determines what the agent "remembers" from prior turns. In Phase 1, Spurline ships short-term memory only -- a sliding window of recent turns.
+Memory determines what the agent "remembers" from prior turns. Spurline ships short-term memory (sliding window) and an optional long-term adapter layer.
 
 ### Configuring Memory
 
@@ -106,6 +106,10 @@ The `Memory::Manager` is created per-agent based on DSL configuration:
 ```ruby
 class MyAgent < Spurline::Agent
   memory :short_term, window: 10
+  memory :long_term,
+         adapter: :postgres,
+         connection_string: ENV.fetch("DATABASE_URL"),
+         embedding_model: :openai
 end
 ```
 
@@ -118,6 +122,7 @@ manager.add_turn(turn)        # Add a completed turn
 manager.recent_turns           # All turns in the window
 manager.recent_turns(5)        # The 5 most recent turns
 manager.turn_count             # How many turns are in memory
+manager.recall(query: "...")   # Retrieve long-term memories (if configured)
 manager.clear!                 # Wipe all memory
 manager.window_overflowed?     # True if any turns have been evicted
 ```
@@ -134,7 +139,18 @@ Add turn 6:      [2] [3] [4] [5] [6]   -- turn 1 evicted
 Add turn 7:      [3] [4] [5] [6] [7]   -- turn 2 evicted
 ```
 
-The `last_evicted` property tracks the most recently evicted turn. `window_overflowed?` on the manager returns true once any eviction has occurred. This signal is intentional -- when long-term memory or summarization is added in a future phase, it will trigger summarization of evicted turns.
+The `last_evicted` property tracks the most recently evicted turn. When long-term memory is configured, the manager persists each newly evicted turn into the long-term store.
+
+### Long-Term Memory (Adapter-Based)
+
+Long-term memory is optional and configured via `memory :long_term`.
+
+- `adapter: :postgres` wires `Memory::LongTerm::Postgres`.
+- `embedding_model: :openai` wires `Memory::Embedder::OpenAI`.
+- Evicted turns are persisted automatically (input + output text, plus turn metadata).
+- Context assembly performs semantic recall with `memory.recall(query:, limit:)`.
+
+`Memory::LongTerm::Postgres#create_table!` intentionally does not run automatically. Schema creation is explicit so infrastructure changes remain under operator control.
 
 ---
 
@@ -143,8 +159,9 @@ The `last_evicted` property tracks the most recently evicted turn. `window_overf
 `Memory::ContextAssembler` builds the ordered array of `Security::Content` objects sent to the LLM. Assembly order is fixed:
 
 1. **Persona system prompt** (trust: `:system`) -- the agent's identity and instructions.
-2. **Recent conversation history** (trust: inherited) -- input/output pairs from the memory window, preserving original trust levels.
-3. **Current user input** (trust: `:user`) -- the message being processed now.
+2. **Recalled long-term memories** (trust: `:operator`) -- semantic matches for the current input, when configured.
+3. **Recent conversation history** (trust: inherited) -- input/output pairs from the memory window, preserving original trust levels.
+4. **Current user input** (trust: `:user`) -- the message being processed now.
 
 ```ruby
 assembler = Memory::ContextAssembler.new
@@ -184,9 +201,20 @@ Only completed turns are restored -- incomplete turns (from a crash mid-response
 
 ## Session Stores
 
-### Store::Memory (Phase 1)
+### Store::Memory
 
-The in-memory store is the only store in Phase 1. It is suitable for development and testing but does not persist across process restarts. It is thread-safe via Mutex.
+The in-memory session store is suitable for development and testing but does not persist across process restarts. It is thread-safe via `Mutex`.
+
+### Store::SQLite
+
+SQLite session storage is built for durable, restart-safe sessions:
+
+```ruby
+Spurline.configure do |config|
+  config.session_store = :sqlite
+  config.session_store_path = "tmp/spurline_sessions.db"
+end
+```
 
 ### The Store Interface
 
@@ -199,7 +227,7 @@ All stores implement `Session::Store::Base`:
 | `delete`     | Remove a session by ID                         |
 | `exists?`    | Check whether a session ID is in the store     |
 
-The memory store also provides `size`, `clear!`, and `ids` for management. A Postgres store is planned for a future phase.
+The memory store also provides `size`, `clear!`, and `ids` for management. A Postgres session store is planned for a future phase.
 
 ---
 

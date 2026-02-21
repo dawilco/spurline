@@ -102,12 +102,12 @@ Tool argument redaction is enforced across audit entries, session turn tool-call
 
 ### 1.2 — Long-Term Memory Adapter
 
-Short-term (sliding window) is built. Long-term is stubbed.
+Status: implemented (tracer bullet).
 
-- `Memory::Store` abstract adapter interface
-- `Memory::Store::Postgres` using pgvector (Andrew Kane's `neighbor` gem is the standard here)
-- Semantic retrieval via embedding model (configurable, defaults to provider embeddings via RubyLLM)
-- `memory :long_term, adapter: :postgres, embedding_model: :openai` DSL wires through
+- `Memory::LongTerm::Base` abstract adapter interface
+- `Memory::LongTerm::Postgres` using pgvector via the `pg` gem (no ActiveRecord dependency)
+- `Memory::Embedder::Base` with `Memory::Embedder::OpenAI`
+- `memory :long_term, adapter: :postgres, embedding_model: :openai` DSL now wires through manager + context assembly
 
 ### 1.3 — Episodic Memory
 

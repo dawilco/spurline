@@ -1,6 +1,26 @@
 # frozen_string_literal: true
 
 RSpec.describe Spurline do
+  describe "EmbedderError" do
+    it "is defined" do
+      expect(defined?(Spurline::EmbedderError)).to eq("constant")
+    end
+
+    it "inherits from AgentError" do
+      expect(Spurline::EmbedderError).to be < Spurline::AgentError
+    end
+  end
+
+  describe "LongTermMemoryError" do
+    it "is defined" do
+      expect(defined?(Spurline::LongTermMemoryError)).to eq("constant")
+    end
+
+    it "inherits from AgentError" do
+      expect(Spurline::LongTermMemoryError).to be < Spurline::AgentError
+    end
+  end
+
   describe "SecretNotFoundError" do
     it "is defined" do
       expect(defined?(Spurline::SecretNotFoundError)).to eq("constant")

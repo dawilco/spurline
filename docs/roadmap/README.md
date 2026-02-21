@@ -4,7 +4,7 @@ Three documents. Read them in order.
 
 **[VISION.md](VISION.md)** — Why Spurline exists. The structural gap in the Ruby AI ecosystem. What we are, what we aren't, and why Ruby is the right language for this. The competitive position explained in plain terms.
 
-**[CURRENT_STATE.md](CURRENT_STATE.md)** — Honest snapshot of what is built (framework core, trust system, context pipeline, tools, spur contract, streaming), what is partial (long-term memory, full CLI, audit log hardening), and what is not yet designed (Cartographer, suspended sessions, multi-channel presence, scoped tool contexts).
+**[CURRENT_STATE.md](CURRENT_STATE.md)** — Honest snapshot of what is built (framework core, trust system, context pipeline, tools, spur contract, streaming), what is partial (memory depth, LLM adapter coverage, persona context injection), and what is not yet designed (Cartographer, suspended sessions, multi-channel presence, scoped tool contexts).
 
 **[ROADMAP.md](ROADMAP.md)** — Sequenced milestones from current state to production-grade agentic development platform. Each milestone has a clear outcome. The order reflects real dependencies, not wishful parallelism.
 

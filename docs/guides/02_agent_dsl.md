@@ -151,13 +151,19 @@ A declared name missing from the registry raises `Spurline::ToolNotFoundError` a
 
 ## memory
 
-Configures memory stores. Phase 1 supports only `:short_term`.
+Configures memory stores.
 
 ```ruby
 memory :short_term, window: 30
+memory :long_term,
+       adapter: :postgres,
+       connection_string: ENV.fetch("DATABASE_URL"),
+       embedding_model: :openai
 ```
 
-The `window:` option controls how many recent turns are kept. Default is 20.
+- `:short_term` uses a sliding window (`window:` default is 20).
+- `:long_term` supports `adapter: :postgres` and `embedding_model: :openai`.
+- `:long_term` can also accept custom adapter/embedder objects that respond to the expected interface.
 
 **Inheritance:** configs merge per memory type. Access via `MyAgent.memory_config`.
 
@@ -280,6 +286,7 @@ class ApplicationAgent < Spurline::Agent
   end
 
   memory :short_term, window: 20
+  # memory :long_term, adapter: :postgres, connection_string: "...", embedding_model: :openai
   on_error { |e| ErrorTracker.report(e) }
 end
 

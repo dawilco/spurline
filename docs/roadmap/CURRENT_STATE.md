@@ -84,7 +84,14 @@ First spur: `spurline-web-search` (in `spurs/` directory). Functional proof-of-c
 
 `Memory::Manager` and `Memory::ShortTerm` (sliding window, configurable size). Context assembly via `Memory::ContextAssembler`.
 
-Long-term memory (vector store abstraction, semantic retrieval) is **specified in architecture docs but not implemented**. The `memory :long_term, adapter: :postgres` DSL exists but wires to nothing functional yet.
+Long-term memory tracer bullet is now implemented:
+
+- `Memory::Embedder::Base` with `Memory::Embedder::OpenAI`
+- `Memory::LongTerm::Base` with `Memory::LongTerm::Postgres` (pgvector via `pg`)
+- Automatic persistence of evicted turns from short-term memory into long-term memory
+- Semantic recall wired into context assembly (`persona -> recalled memories -> recent history -> current input`)
+
+Still missing for full maturity: summarization/compaction strategies, richer retrieval filtering (for example session/user scoping), and episodic memory structures.
 
 ### Audit Log — **Built (M0.5 Hardening Complete)**
 
