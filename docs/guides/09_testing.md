@@ -301,12 +301,30 @@ end
 
 ---
 
+## Integration Coverage (StubAdapter, No VCR)
+
+Spurline now includes focused integration specs under `spec/spurline/` that exercise the full lifecycle loop across multiple components without live LLM calls:
+
+- `spec/spurline/guardrails/max_tool_calls_integration_spec.rb` -- verifies `max_tool_calls` enforcement, error state transition, and capped execution count.
+- `spec/spurline/security/pii_pipeline_spec.rb` -- verifies `pii_filter :redact` modifies outbound adapter messages before send.
+- `spec/spurline/session/sqlite_persistence_roundtrip_spec.rb` -- verifies session/turn persistence and trust-level round-trip through SQLite.
+- `spec/spurline/error/tool_error_recovery_spec.rb` -- verifies permission-denied tool execution transitions to error and is audit-visible.
+- `spec/spurline/memory/window_overflow_spec.rb` -- verifies short-term memory window eviction behavior while session history remains complete.
+- `spec/spurline/streaming/enumerator_with_tools_spec.rb` -- verifies enumerator-mode streaming includes tool and text chunks and terminal `:done`.
+- `spec/spurline/session/concurrent_access_spec.rb` -- verifies concurrent SQLite-backed agent execution across independent sessions.
+- `spec/spurline/audit/completeness_spec.rb` -- verifies expected audit event set, ordering, summary counts, and replay timeline shape.
+
+These are integration specs in behavior, but still deterministic and local because every call uses `StubAdapter`.
+
+---
+
 ## Running the Suite
 
 ```bash
 bundle exec rspec                              # everything
 bundle exec rspec spec/spurline/agent_spec.rb  # single file
 bundle exec rspec spec/spurline/security/      # security specs only
+bundle exec rspec spec/spurline/guardrails/ spec/spurline/security/pii_pipeline_spec.rb spec/spurline/session/sqlite_persistence_roundtrip_spec.rb spec/spurline/error/ spec/spurline/memory/window_overflow_spec.rb spec/spurline/streaming/enumerator_with_tools_spec.rb spec/spurline/session/concurrent_access_spec.rb spec/spurline/audit/completeness_spec.rb  # focused integration coverage
 COVERAGE=1 bundle exec rspec                   # with coverage
 ```
 

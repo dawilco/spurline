@@ -19,6 +19,7 @@ Recent hardening shipped:
 - three-tier tool secret management (agent overrides, runtime vault, encrypted credentials, ENV fallback)
 - structured replay audit events (`:llm_request`, `:llm_response`, `:tool_call`, `:tool_result`)
 - configurable in-memory audit retention (`audit_max_entries`)
+- stubbed integration coverage for guardrails, PII pipeline, SQLite round-trip/concurrency, memory overflow, streaming enumerator tool loops, and audit completeness
 
 ## Requirements
 
