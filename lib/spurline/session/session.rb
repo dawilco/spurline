@@ -104,6 +104,21 @@ module Spurline
         save!
       end
 
+      # Suspends the session and persists a checkpoint for later resumption.
+      def suspend!(checkpoint:)
+        Suspension.suspend!(self, checkpoint: checkpoint)
+      end
+
+      # Resumes a suspended session and clears the persisted checkpoint.
+      def resume!
+        Suspension.resume!(self)
+      end
+
+      # Whether the session is currently suspended.
+      def suspended?
+        Suspension.suspended?(self)
+      end
+
       # Duration in seconds (float).
       def duration
         return nil unless finished_at

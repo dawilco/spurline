@@ -13,6 +13,7 @@ module Spurline
         running
         waiting_for_tool
         processing
+        suspended
         finishing
         complete
         error
@@ -21,9 +22,10 @@ module Spurline
       VALID_TRANSITIONS = {
         uninitialized: [:ready],
         ready: [:running],
-        running: [:waiting_for_tool, :finishing, :error],
-        waiting_for_tool: [:processing, :error],
-        processing: [:running, :finishing, :error],
+        running: [:waiting_for_tool, :finishing, :suspended, :error],
+        waiting_for_tool: [:processing, :suspended, :error],
+        processing: [:running, :finishing, :suspended, :error],
+        suspended: [:running],
         finishing: [:complete, :error],
         complete: [:running],
         error: [],

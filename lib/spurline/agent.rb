@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "lifecycle/suspension_boundary"
+
 module Spurline
   # The public API for Spurline agents. Developers inherit from this class.
   #
@@ -47,7 +49,7 @@ module Spurline
         max_entries: resolve_audit_max_entries
       )
       @assembler = Memory::ContextAssembler.new
-      @state = :ready
+      @state = @session.respond_to?(:suspended?) && @session.suspended? ? :suspended : :ready
 
       # Restore memory from existing session if resuming
       restore_session_memory!
@@ -56,26 +58,54 @@ module Spurline
     end
 
     # Single-shot execution. Streams chunks via block or returns an Enumerator (ADR-001).
-    def run(input, &block)
+    def run(input, suspension_check: nil, &block)
       if block
-        execute_run(input, &block)
+        execute_run(input, suspension_check: suspension_check, &block)
       else
         Streaming::StreamEnumerator.new do |consumer|
-          execute_run(input) { |chunk| consumer.call(chunk) }
+          execute_run(input, suspension_check: suspension_check) { |chunk| consumer.call(chunk) }
         end
       end
     end
 
     # Multi-turn conversation. Session persists between calls.
     # Resets agent state between turns to allow consecutive calls.
-    def chat(input, &block)
+    def chat(input, suspension_check: nil, &block)
       reset_for_next_turn! if @state == :complete
 
       if block
-        execute_run(input, &block)
+        execute_run(input, suspension_check: suspension_check, &block)
       else
         Streaming::StreamEnumerator.new do |consumer|
-          execute_run(input) { |chunk| consumer.call(chunk) }
+          execute_run(input, suspension_check: suspension_check) { |chunk| consumer.call(chunk) }
+        end
+      end
+    end
+
+    # Resume a suspended session from its last checkpoint.
+    def resume(suspension_check: nil, &block)
+      unless @session.suspended?
+        raise Spurline::InvalidResumeError,
+          "Session is not suspended (state=#{@session.state.inspect})"
+      end
+
+      checkpoint = Session::Suspension.checkpoint_for(@session)
+      input = resume_input_from_checkpoint(checkpoint)
+
+      if block
+        execute_run(
+          input,
+          suspension_check: suspension_check,
+          resume_checkpoint: checkpoint,
+          &block
+        )
+      else
+        Streaming::StreamEnumerator.new do |consumer|
+          execute_run(
+            input,
+            suspension_check: suspension_check,
+            resume_checkpoint: checkpoint
+          ) { |chunk| consumer.call(chunk) }
         end
       end
     end
@@ -97,10 +127,21 @@ module Spurline
 
     private
 
-    def execute_run(input, &chunk_handler)
-      wrapped_input = wrap_input(input)
+    def execute_run(input, suspension_check: nil, resume_checkpoint: nil, &chunk_handler)
+      if @session.suspended? && resume_checkpoint.nil?
+        raise Spurline::InvalidResumeError,
+          "Session is suspended. Use #resume to continue from checkpoint."
+      end
+
+      wrapped_input = resume_checkpoint ? input : wrap_input(input)
       @state = :running
-      @session.transition_to!(:running)
+      if resume_checkpoint
+        @session.resume!
+        run_hook(:on_resume, @session, resume_checkpoint)
+      else
+        @session.transition_to!(:running)
+        run_hook(:on_turn_start, @session)
+      end
 
       runner = Lifecycle::Runner.new(
         adapter: @adapter,
@@ -109,7 +150,8 @@ module Spurline
         memory: @memory,
         assembler: @assembler,
         audit: @audit_log,
-        guardrails: guardrail_settings
+        guardrails: guardrail_settings,
+        suspension_check: effective_suspension_check(suspension_check)
       )
 
       runner.run(
@@ -119,12 +161,24 @@ module Spurline
         tools_schema: build_tools_schema,
         adapter_config: self.class.model_config || {},
         agent_context: build_agent_context,
-        &chunk_handler
-      )
+        resume_checkpoint: resume_checkpoint
+      ) do |chunk|
+        run_hook(:on_tool_call, chunk.metadata, @session) if chunk.tool_end?
+        chunk_handler&.call(chunk)
+      end
 
       @state = :complete
       @session.complete!
+      run_hook(:on_turn_end, @session, @session.current_turn)
       run_hook(:on_finish, @session)
+    rescue Spurline::Lifecycle::SuspensionSignal => e
+      @state = :suspended
+      @session.suspend!(checkpoint: e.checkpoint)
+      @audit_log.record(:suspended, turn: @session.current_turn&.number)
+      run_hook(:on_suspend, @session, e.checkpoint)
+      nil
+    rescue Spurline::InvalidResumeError
+      raise
     rescue Spurline::AgentError => e
       @state = :error
       @session.error!(e)
@@ -217,6 +271,13 @@ module Spurline
       hooks.each { |block| block.call(*args) }
     end
 
+    def effective_suspension_check(suspension_check)
+      return suspension_check if suspension_check
+      return self.class.build_suspension_check if self.class.respond_to?(:build_suspension_check)
+
+      Lifecycle::SuspensionCheck.none
+    end
+
     def resolve_secret_overrides
       overrides = {}
       tool_config = self.class.tool_config
@@ -242,6 +303,23 @@ module Spurline
 
       resumption = Session::Resumption.new(session: @session, memory: @memory)
       resumption.restore!
+    end
+
+    def resume_input_from_checkpoint(checkpoint)
+      serialized = checkpoint_value(checkpoint, :last_tool_result)
+      if serialized && !serialized.to_s.empty?
+        Security::Gates::ToolResult.wrap(serialized.to_s, tool_name: "suspended_resume")
+      elsif @session.current_turn
+        @session.current_turn.input
+      else
+        Security::Gates::UserInput.wrap("", user_id: @user.to_s)
+      end
+    end
+
+    def checkpoint_value(checkpoint, key)
+      return nil unless checkpoint
+
+      checkpoint[key] || checkpoint[key.to_s]
     end
 
     def reset_for_next_turn!

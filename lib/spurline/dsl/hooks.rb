@@ -5,7 +5,16 @@ module Spurline
     # DSL for registering lifecycle event hooks.
     # Registers configuration at class load time — never executes behavior.
     module Hooks
-      HOOK_TYPES = %i[on_start on_turn_start on_tool_call on_turn_end on_finish on_error].freeze
+      HOOK_TYPES = %i[
+        on_start
+        on_turn_start
+        on_tool_call
+        on_turn_end
+        on_suspend
+        on_resume
+        on_finish
+        on_error
+      ].freeze
 
       def self.included(base)
         base.extend(ClassMethods)

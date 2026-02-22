@@ -81,6 +81,12 @@ module Spurline
   # Raised when long-term memory persistence or retrieval fails.
   class LongTermMemoryError < AgentError; end
 
+  # Raised when a session cannot be suspended from its current state.
+  class SuspensionError < AgentError; end
+
+  # Raised when a resume is attempted for a non-suspended session.
+  class InvalidResumeError < AgentError; end
+
   # Raised when Cartographer cannot access the target repository path.
   class CartographerAccessError < AgentError; end
 

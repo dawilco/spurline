@@ -13,6 +13,7 @@ module Spurline
     include Spurline::DSL::Memory
     include Spurline::DSL::Guardrails
     include Spurline::DSL::Hooks
+    include Spurline::DSL::SuspendUntil
 
     # Default model-to-adapter mapping.
     DEFAULT_ADAPTERS = {

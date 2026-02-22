@@ -423,6 +423,68 @@ RSpec.describe Spurline::Agent do
 
       expect(error_caught).to be_a(Spurline::InjectionAttemptError)
     end
+
+    it "fires on_turn_start and on_turn_end around a successful turn" do
+      started = false
+      ended_turn = nil
+      klass = agent_class
+      klass.on_turn_start { |_session| started = true }
+      klass.on_turn_end { |_session, turn| ended_turn = turn }
+
+      agent = klass.new
+      agent.use_stub_adapter(responses: [stub_text("Done")])
+      agent.run("Do it") { |_chunk| }
+
+      expect(started).to be true
+      expect(ended_turn).to be_a(Spurline::Session::Turn)
+      expect(ended_turn.number).to eq(1)
+    end
+
+    it "fires on_tool_call when a tool finishes" do
+      tool_events = []
+      klass = agent_class
+      klass.on_tool_call { |metadata, _session| tool_events << metadata }
+
+      agent = klass.new
+      agent.use_stub_adapter(responses: [
+        stub_tool_call(:echo, message: "test"),
+        stub_text("Done"),
+      ])
+      agent.run("Echo something") { |_chunk| }
+
+      expect(tool_events.length).to eq(1)
+      expect(tool_events.first[:tool_name]).to eq("echo")
+    end
+
+    it "fires on_suspend and on_resume across suspended execution" do
+      suspended_checkpoint = nil
+      resumed_checkpoint = nil
+      klass = agent_class
+      klass.on_suspend { |_session, checkpoint| suspended_checkpoint = checkpoint }
+      klass.on_resume { |_session, checkpoint| resumed_checkpoint = checkpoint }
+
+      session_id = "suspended-hooks-session"
+      first_agent = klass.new(session_id: session_id)
+      first_agent.use_stub_adapter(responses: [
+        stub_tool_call(:echo, message: "test"),
+      ])
+      first_agent.run(
+        "Use the echo tool once.",
+        suspension_check: Spurline::Lifecycle::SuspensionCheck.after_tool_calls(1)
+      ) { |_chunk| }
+
+      expect(first_agent.state).to eq(:suspended)
+      expect(suspended_checkpoint).to be_a(Hash)
+      expect(suspended_checkpoint[:loop_iteration]).to eq(1)
+
+      resumed_agent = klass.new(session_id: session_id)
+      resumed_agent.use_stub_adapter(responses: [stub_text("Resumed completion")])
+      resumed_agent.resume { |_chunk| }
+
+      expect(resumed_agent.state).to eq(:complete)
+      expect(resumed_checkpoint).to be_a(Hash)
+      expect(resumed_checkpoint[:loop_iteration]).to eq(1)
+    end
   end
 
   describe "persona selection" do

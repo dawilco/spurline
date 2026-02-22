@@ -21,6 +21,26 @@ RSpec.describe Spurline do
     end
   end
 
+  describe "SuspensionError" do
+    it "is defined" do
+      expect(defined?(Spurline::SuspensionError)).to eq("constant")
+    end
+
+    it "inherits from AgentError" do
+      expect(Spurline::SuspensionError).to be < Spurline::AgentError
+    end
+  end
+
+  describe "InvalidResumeError" do
+    it "is defined" do
+      expect(defined?(Spurline::InvalidResumeError)).to eq("constant")
+    end
+
+    it "inherits from AgentError" do
+      expect(Spurline::InvalidResumeError).to be < Spurline::AgentError
+    end
+  end
+
   describe "SecretNotFoundError" do
     it "is defined" do
       expect(defined?(Spurline::SecretNotFoundError)).to eq("constant")

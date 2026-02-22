@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require "time"
+require_relative "suspension_boundary"
+
 module Spurline
   module Lifecycle
     # The LLM call loop. Orchestrates context assembly, streaming, tool execution,
@@ -10,7 +13,7 @@ module Spurline
     #   - max_tool_calls exceeded
     #   - max_turns exceeded (multi-loop safety valve)
     class Runner
-      def initialize(adapter:, pipeline:, tool_runner:, memory:, assembler:, audit:, guardrails:)
+      def initialize(adapter:, pipeline:, tool_runner:, memory:, assembler:, audit:, guardrails:, suspension_check: nil)
         @adapter = adapter
         @pipeline = pipeline
         @tool_runner = tool_runner
@@ -18,22 +21,27 @@ module Spurline
         @assembler = assembler
         @audit = audit
         @guardrails = guardrails
+        @suspension_check = suspension_check || Lifecycle::SuspensionCheck.none
         @loop_count = 0
+        @messages_so_far = []
+        @last_tool_result = nil
       end
 
       # ASYNC-READY: the main call loop
-      def run(input:, session:, persona:, tools_schema:, adapter_config:, agent_context: nil, &chunk_handler)
-        turn = session.start_turn(input: input)
-        @audit.record(:turn_start, turn: turn.number)
-        parent_episode_id = record_episode(
+      def run(
+        input:,
+        session:,
+        persona:,
+        tools_schema:,
+        adapter_config:,
+        agent_context: nil,
+        resume_checkpoint: nil,
+        &chunk_handler
+      )
+        turn, input, parent_episode_id = initialize_turn_context(
           session: session,
-          turn: turn,
-          type: :user_message,
-          content: input,
-          metadata: {
-            source: input.respond_to?(:source) ? input.source : "user:input",
-            trust: input.respond_to?(:trust) ? input.trust : :user,
-          }
+          input: input,
+          resume_checkpoint: resume_checkpoint
         )
 
         loop do
@@ -54,6 +62,15 @@ module Spurline
 
           # Separate system prompt from messages while preserving role semantics.
           system_prompt, messages = build_messages(contents, processed, input)
+          @messages_so_far.concat(messages.map(&:dup))
+          check_suspension!(
+            boundary_type: :before_llm_call,
+            turn: turn,
+            context: {
+              loop_iteration: @loop_count,
+              turn_number: turn.number,
+            }
+          )
 
           # 3. Stream LLM response
           buffer = Streaming::Buffer.new
@@ -176,6 +193,16 @@ module Spurline
               ) || parent_episode_id
 
               # 6. Update input for next loop iteration with tool result
+              @last_tool_result = serialize_tool_result(result)
+              check_suspension!(
+                boundary_type: :after_tool_result,
+                turn: turn,
+                context: {
+                  loop_iteration: @loop_count,
+                  turn_number: turn.number,
+                  tool_name: tool_call[:name],
+                }
+              )
               input = result
             end
 
@@ -234,6 +261,72 @@ module Spurline
       end
 
       private
+
+      def initialize_turn_context(session:, input:, resume_checkpoint:)
+        if resume_checkpoint
+          @loop_count = checkpoint_value(resume_checkpoint, :loop_iteration).to_i
+          @last_tool_result = checkpoint_value(resume_checkpoint, :last_tool_result)
+          @messages_so_far = Array(checkpoint_value(resume_checkpoint, :messages_so_far)).map do |entry|
+            entry.is_a?(Hash) ? entry.dup : entry
+          end
+
+          turn = session.current_turn
+          if turn.nil? || turn.complete?
+            turn = session.start_turn(input: input)
+            @audit.record(:turn_start, turn: turn.number)
+          end
+
+          return [turn, input, nil]
+        end
+
+        @loop_count = 0
+        @last_tool_result = nil
+        @messages_so_far = []
+
+        turn = session.start_turn(input: input)
+        @audit.record(:turn_start, turn: turn.number)
+        parent_episode_id = record_episode(
+          session: session,
+          turn: turn,
+          type: :user_message,
+          content: input,
+          metadata: {
+            source: input.respond_to?(:source) ? input.source : "user:input",
+            trust: input.respond_to?(:trust) ? input.trust : :user,
+          }
+        )
+        [turn, input, parent_episode_id]
+      end
+
+      def check_suspension!(boundary_type:, turn:, context: {})
+        boundary = SuspensionBoundary.new(type: boundary_type, context: context)
+        decision = @suspension_check.call(boundary)
+        return if decision == :continue
+
+        raise SuspensionSignal.new(checkpoint: suspension_checkpoint(turn: turn, context: context))
+      end
+
+      def suspension_checkpoint(turn:, context:)
+        {
+          loop_iteration: @loop_count,
+          last_tool_result: @last_tool_result,
+          messages_so_far: @messages_so_far.dup,
+          turn_number: turn.number,
+          suspended_at: Time.now.utc.iso8601,
+          suspension_reason: context[:suspension_reason],
+        }
+      end
+
+      def checkpoint_value(checkpoint, key)
+        checkpoint[key] || checkpoint[key.to_s]
+      end
+
+      def serialize_tool_result(result)
+        return nil if result.nil?
+        return result.text if result.respond_to?(:text)
+
+        result.to_s
+      end
 
       def check_max_turns!
         max = @guardrails[:max_turns] || 50
