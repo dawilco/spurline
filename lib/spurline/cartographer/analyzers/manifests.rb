@@ -92,8 +92,8 @@ module Spurline
         private
 
         def detect_web_framework(gemfile:, gemfile_lock:, package:, pyproject:)
-          return [:rails, gem_version("rails", gemfile_lock, package)] if dependency_present?("rails", gemfile, gemfile_lock, package, pyproject)
-          return [:sinatra, gem_version("sinatra", gemfile_lock, package)] if dependency_present?("sinatra", gemfile, gemfile_lock, package, pyproject)
+          return [:rails, gem_version("rails", gemfile, gemfile_lock, package)] if dependency_present?("rails", gemfile, gemfile_lock, package, pyproject)
+          return [:sinatra, gem_version("sinatra", gemfile, gemfile_lock, package)] if dependency_present?("sinatra", gemfile, gemfile_lock, package, pyproject)
           return [:express, package_version("express", package)] if dependency_present?("express", gemfile, gemfile_lock, package, pyproject)
           return [:django, python_version("django", pyproject)] if dependency_present?("django", gemfile, gemfile_lock, package, pyproject)
 
@@ -150,11 +150,32 @@ module Spurline
           gemfile_lock.match?(/^\s{4}#{Regexp.escape(name)}\s+\(/)
         end
 
-        def gem_version(name, gemfile_lock, package)
+        def gem_version(name, gemfile, gemfile_lock, package)
           version = gemfile_lock&.match(/^\s{4}#{Regexp.escape(name)}\s+\(([^)]+)\)/)&.captures&.first
           return version if version
 
+          declared = gem_declared_version(name, gemfile)
+          return declared if declared
+
           package_version(name, package)
+        end
+
+        def gem_declared_version(name, gemfile)
+          return nil unless gemfile
+
+          line = gemfile.each_line.find { |text| text.match?(/^\s*gem\s+["']#{Regexp.escape(name)}["']/) }
+          return nil unless line
+
+          match = line.match(/^\s*gem\s+["']#{Regexp.escape(name)}["']\s*,\s*["']([^"']+)["']/)
+          return nil unless match
+
+          normalize_version_requirement(match[1])
+        end
+
+        def normalize_version_requirement(value)
+          token = value.to_s.split(",").first.to_s.strip
+          token = token.sub(/\A[~><=\s]*/, "")
+          token.empty? ? nil : token
         end
 
         def package_dependency?(name, package)
