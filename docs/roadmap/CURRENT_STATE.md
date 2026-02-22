@@ -114,7 +114,7 @@ Generators include usable scaffolds with validation-ready project structure (`co
 
 ### Testing Surface — **Built**
 
-- 659 examples passing (0 failures, 4 pending for Postgres-availability scenarios)
+- 828 examples passing (0 failures, 4 pending for Postgres-availability scenarios)
 - Full stubbed lifecycle integration coverage now includes 8 focused integration specs across guardrails, streaming, memory, session persistence/concurrency, and audit completeness
 - `Spurline::Testing` now includes:
   - `stub_text`
@@ -142,9 +142,9 @@ Generators include usable scaffolds with validation-ready project structure (`co
 
 ---
 
-## Milestone 2 (Autonomous Agents — In Progress)
+## Milestone 2 (Autonomous Agents — Complete, 828 specs)
 
-### Cartographer — **Built**
+### Cartographer (M2.1) — **Built**
 
 `Cartographer::Runner` coordinates 6 analyzer layers to produce a frozen, serializable `RepoProfile` from any repository path. Convenience API: `Spurline.analyze_repo("/path/to/repo")`.
 
@@ -154,27 +154,46 @@ Individual analyzer failures degrade confidence gracefully without aborting the 
 
 ---
 
+### Suspended Sessions (M2.2) — **Built**
+
+`Session::Suspension` module provides `suspend!`/`resume!`/`suspended?`/`checkpoint_for` as standalone methods. `Lifecycle::SuspensionBoundary` marks safe pause points (`:after_tool_result`, `:before_llm_call`). `SuspensionSignal` is flow control (not an error). `SuspensionCheck` callable interface with factories (`.none`, `.after_tool_calls(n)`). `DSL::SuspendUntil` provides declarative `suspend_until :tool_calls, count: 3`.
+
+Integration wiring into Agent/Runner/States is complete — `:suspended` state added to lifecycle, Agent catches `SuspensionSignal`, Runner accepts `suspension_check:` parameter.
+
+### Scoped Tool Contexts (M2.3) — **Built**
+
+`Tools::Scope` is an immutable, frozen value object with `permits?`, `enforce!`, `narrow`, and `subset_of?`. Supports constraint types: `:branch`, `:pr`, `:repo`, `:review_app`, `:custom`. Pattern matching via `File.fnmatch`. Scope narrowing returns new Scope (intersection of constraints). Serializable via `to_h`/`from_h`.
+
+Integration wiring into Runner is complete — `scope:` parameter flows through tool execution, `_scope:` injected for scoped tools.
+
+### Two-Tier Scale Architecture (M2.4) — **Built**
+
+Full orchestration infrastructure following ADR-005 principles:
+
+- `Orchestration::TaskEnvelope` — immutable work unit with instruction, acceptance_criteria, constraints, scoped_context
+- `Orchestration::Ledger` — workflow state machine (planning→executing→merging→complete|error) with task lifecycle and dependency graph, decoupled from Agent/Session
+- `Orchestration::Ledger::Store::Memory` — thread-safe in-memory store (follows Session::Store pattern)
+- `Orchestration::Judge` — stateless evaluator with `:structured`/`:llm_eval`/`:custom` strategies, returns typed `Verdict`
+- `Orchestration::MergeQueue` — deterministic FIFO with conflict strategies (`:escalate`/`:file_level`/`:union`), NO LLM calls
+- `Orchestration::PermissionIntersection` — setuid rule enforcement (`compute` + `validate_no_escalation!`)
+
+### Idempotency Layer (M2.5) — **Built**
+
+`Tools::Idempotency` module with three inner classes:
+
+- `KeyComputer` — SHA256 of canonical JSON (sorted keys), supports `key_params` and `key_fn` overrides
+- `Ledger` — session-scoped cache wrapping plain hash, lazy TTL cleanup, conflict detection (same key + different args = crash)
+- `Config` — per-tool configuration built from class declarations or DSL options
+
+Integration wiring into Runner is complete — idempotent tools check cache before execution, store results after.
+
+---
+
 ## What Is Not Yet Built
-
-### Suspended Sessions — **Not designed**
-
-State parking/wakeup for external events (PR comments, chat replies, CI webhooks, approvals) is not implemented.
 
 ### Multi-Channel Presence — **Not designed**
 
 Cross-channel identity routing (Linear/GitHub/Teams/Slack/SIP) is not implemented.
-
-### Scoped Tool Contexts — **Not designed**
-
-Work-item scoped permission envelopes are not implemented.
-
-### Two-Tier Scale Architecture (ADR-005) — **Designed, not implemented**
-
-ADR-005 formalizes the planner/worker model for running hundreds of agents without serial dependencies. Workers are blind and isolated. Introduces four new concepts: Task Envelopes (minimal viable context for workers), Workflow Ledger (durable workflow state outside all agents), Merge Queue (deterministic FIFO output integration), and Judges (evaluation gates between workers and merge). No `spawn_agent` implementation exists yet. The Workflow Ledger and Merge Queue are the two genuinely new components — everything else maps to existing designs (context pipeline → task envelopes, scoped tool contexts → worker isolation, suspended sessions → ledger persistence).
-
-### Idempotency Layer — **Not designed**
-
-Idempotency keys for irreversible tool execution are not implemented.
 
 ### Secret Management (Advanced Ops) — **Partial**
 
@@ -185,8 +204,8 @@ Current three-tier model is implemented (credentials + tool declarations + runti
 ## Next Milestones
 
 - ~~M2.1 Cartographer~~ **Complete**
-- **M2.2 Suspended Sessions**
-- **M2.3 Scoped Tool Contexts**
-- **M2.4 Two-Tier Scale Architecture** (Workflow Ledger + Merge Queue + Task Envelopes + Judges)
-
-M2.1 and M2.2 are the two highest-leverage priorities after Milestone 1 closure. M2.4 depends on M2.2 (suspended sessions) and M2.3 (scoped tool contexts) being solid — the ledger builds on session persistence, and worker isolation builds on scoped contexts.
+- ~~M2.2 Suspended Sessions~~ **Complete**
+- ~~M2.3 Scoped Tool Contexts~~ **Complete**
+- ~~M2.4 Two-Tier Scale Architecture~~ **Complete**
+- ~~M2.5 Idempotency Layer~~ **Complete**
+- **Milestone 3: Phase 3 Spurs** (spurline-test, spurline-deploy, spurline-review)

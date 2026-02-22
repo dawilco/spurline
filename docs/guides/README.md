@@ -34,6 +34,13 @@ Read these sequentially to build understanding, or jump to any guide for a speci
 
 - [Cartographer](13_cartographer.md) — Repository analysis and `RepoProfile` generation
 
+## Autonomous Agents
+
+- [Suspended Sessions](15_suspended_sessions.md) — Pause agents at boundaries and resume later
+- [Idempotency](16_idempotency.md) — Prevent duplicate side effects from tool retries
+- [Scoped Tool Contexts](17_scoped_contexts.md) — Constrain tool access by branch, PR, or repo
+- [Multi-Agent Orchestration](18_multi_agent.md) — Two-tier scale architecture with TaskEnvelope, Ledger, Judge, and MergeQueue
+
 ## Advanced
 
 - [Building Spur Gems](10_building_spurs.md) — Package tools as distributable gems
