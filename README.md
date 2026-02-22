@@ -88,6 +88,20 @@ bundle exec spur console
 
 `spur new` now includes a project `README.md`, `.env.example`, and a starter `spec/agents/assistant_agent_spec.rb`.
 
+## Bundled Spurs
+
+Spurline ships bundled spur gems under `spurs/`:
+
+- `spurline-web-search` — Brave-powered web search (`:web_search`)
+- `spurline-test` — test framework detection, execution, and parsing (`:detect_test_framework`, `:run_tests`, `:parse_test_output`)
+
+During local development you can wire a spur gem via path:
+
+```ruby
+# Gemfile
+gem "spurline-test", path: "spurs/spurline-test"
+```
+
 ## Built-in Model Aliases
 
 Use these directly with `use_model`:

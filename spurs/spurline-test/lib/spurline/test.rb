@@ -1,0 +1,17 @@
+# frozen_string_literal: true
+
+require "spurline"
+require_relative "test/version"
+require_relative "test/errors"
+require_relative "test/parsers/base"
+require_relative "test/parsers/rspec"
+require_relative "test/parsers/pytest"
+require_relative "test/parsers/jest"
+require_relative "test/parsers/go_test"
+require_relative "test/parsers/cargo_test"
+require_relative "test/parsers/minitest"
+require_relative "test/tools/run_tests"
+require_relative "test/tools/parse_test_output"
+require_relative "test/tools/detect_test_framework"
+require_relative "test/agents/test_runner_agent"
+require_relative "test/spur"

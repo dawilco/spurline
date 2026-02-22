@@ -113,13 +113,16 @@ data = JSON.parse(File.read("profile.json"))
 restored = Spurline::Cartographer::RepoProfile.from_h(data)
 ```
 
-## What Comes Next
+## Spur Consumers
 
-Phase 3 spurs will consume RepoProfile to make intelligent decisions:
+Current bundled spur using RepoProfile:
 
-- **spurline-test** reads `profile.ci.test_command` to know which test runner to invoke
-- **spurline-deploy** reads `profile.entry_points` and `profile.ci.deploy_command`
-- **spurline-review** reads `profile.frameworks.lint` to review against project standards
+- **spurline-test** reads `profile.ci[:test_command]` to resolve test execution commands before fallback heuristics
+
+Planned Phase 3 spurs:
+
+- **spurline-deploy** reads `profile.entry_points` and `profile.ci[:deploy_command]`
+- **spurline-review** reads `profile.frameworks` and lint/test signals to review against project standards
 - **spurline-docs** reads the full profile to generate accurate setup documentation
 
 ## Future: LLM-Enhanced Analysis

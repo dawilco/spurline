@@ -85,7 +85,13 @@ Gemini adapter remains unbuilt.
 
 ### Spur Ecosystem Contract — **Built**
 
-`Spurline::Spur` contract and deferred registration flow are implemented and active. Bundled spur proof points: `spurline-web-search`, `spurline-deploy`.
+`Spurline::Spur` contract and deferred registration flow are implemented and active.
+Bundled spur proof points now shipping:
+
+- `spurline-web-search`
+- `spurline-deploy`
+- `spurline-local`
+- `spurline-test`
 
 ### Personas — **Built**
 
