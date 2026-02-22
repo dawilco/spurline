@@ -4,6 +4,8 @@ RSpec.describe Spurline::Spur do
   after do
     # Clean up any registered spurs between tests
     described_class.registry.clear
+    described_class.pending_registrations.clear
+    described_class.pending_adapter_registrations.clear
   end
 
   describe ".registry" do
@@ -30,6 +32,22 @@ RSpec.describe Spurline::Spur do
       # The class body has already executed, so we check the registrations
       expect(spur_class.tools.length).to eq(1)
       expect(spur_class.tools.first[:name]).to eq(:test_spur_tool)
+    end
+  end
+
+  describe "adapter registration DSL" do
+    it "collects adapter registrations" do
+      adapter_class = Class.new
+
+      spur_class = Class.new(described_class)
+      spur_class.spur_name "adapter-spur"
+      spur_class.adapters do
+        register :ollama, adapter_class
+      end
+
+      expect(spur_class.adapters.length).to eq(1)
+      expect(spur_class.adapters.first[:name]).to eq(:ollama)
+      expect(spur_class.adapters.first[:adapter_class]).to eq(adapter_class)
     end
   end
 
@@ -71,6 +89,18 @@ RSpec.describe Spurline::Spur do
     end
   end
 
+  describe "AdapterRegistrationContext" do
+    it "collects registrations" do
+      ctx = described_class::AdapterRegistrationContext.new
+      ctx.register(:ollama, String)
+      ctx.register(:stub, Integer)
+
+      expect(ctx.registrations.length).to eq(2)
+      expect(ctx.registrations.first[:name]).to eq(:ollama)
+      expect(ctx.registrations.first[:adapter_class]).to eq(String)
+    end
+  end
+
   describe "PermissionContext" do
     it "collects settings" do
       ctx = described_class::PermissionContext.new
@@ -79,6 +109,32 @@ RSpec.describe Spurline::Spur do
 
       expect(ctx.settings[:default_trust]).to eq(:external)
       expect(ctx.settings[:requires_confirmation]).to be true
+    end
+  end
+
+  describe ".flush_pending_adapter_registrations!" do
+    it "replays deferred adapter registrations into the given registry" do
+      adapter_registry = Class.new do
+        attr_reader :registered
+
+        def initialize
+          @registered = []
+        end
+
+        def register(name, adapter_class)
+          @registered << [name, adapter_class]
+        end
+      end.new
+
+      described_class.pending_adapter_registrations << {
+        name: :ollama,
+        adapter_class: String,
+      }
+
+      described_class.flush_pending_adapter_registrations!(adapter_registry)
+
+      expect(adapter_registry.registered).to eq([[:ollama, String]])
+      expect(described_class.pending_adapter_registrations).to be_empty
     end
   end
 end

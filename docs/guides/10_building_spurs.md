@@ -1,6 +1,6 @@
 # Building Spur Gems
 
-Spurs are standard Ruby gems that package tools and their permissions for distribution. When a spur gem is required, its tools self-register into the Spurline framework. This is how the ecosystem extends: one gem, one `require`, and new capabilities appear in every agent that needs them.
+Spurs are standard Ruby gems that package capabilities for distribution. A spur can register tools, adapters, or both. When a spur gem is required, those capabilities self-register into the Spurline framework. This is how the ecosystem extends: one gem, one `require`, and new capabilities appear in every agent that needs them.
 
 **Prerequisites:** You should be comfortable [building tools](05_building_tools.md) and understand [tool permissions](06_tool_permissions.md).
 
@@ -11,8 +11,9 @@ Spurs are standard Ruby gems that package tools and their permissions for distri
 A spur is a Ruby gem that:
 
 1. Inherits from `Spurline::Spur`
-2. Declares its tools and default permissions via a small DSL
-3. Auto-registers those tools into the framework when the class body finishes loading
+2. Declares tools and/or adapters via a small DSL
+3. Declares default permissions for tools (optional)
+4. Auto-registers those declarations into the framework when the class body finishes loading
 
 The naming convention is `spurline-*`. For example: `spurline-web-search`, `spurline-deploy`, `spurline-github`.
 
@@ -25,9 +26,9 @@ Bundled reference implementations in this repository:
 
 ---
 
-## Anatomy of a Spur
+## Anatomy of a Tool Spur
 
-Here is a complete spur gem entry point:
+Here is a complete tool spur gem entry point:
 
 ```ruby
 # lib/spurline_web.rb
@@ -57,6 +58,27 @@ end
 
 When Ruby loads this file, the `Railtie` class body executes, and the framework auto-registers the tools. No manual wiring required.
 
+### Adapter Spur Example
+
+Some spurs register adapters instead of tools. For example, a local inference spur:
+
+```ruby
+# lib/spurline/local/spur.rb
+# frozen_string_literal: true
+
+module Spurline
+  module Local
+    class Spur < Spurline::Spur
+      spur_name :local
+
+      adapters do
+        register :ollama, Spurline::Local::Adapters::Ollama
+      end
+    end
+  end
+end
+```
+
 ---
 
 ## The Spur DSL
@@ -79,6 +101,16 @@ end
 ```
 
 The `tools` block receives a `ToolRegistrationContext`. Call `register` once per tool, passing a symbol name and the tool class. The name must match the `tool_name` declared on the tool class.
+
+### `adapters`
+
+```ruby
+adapters do
+  register :ollama, Spurline::Local::Adapters::Ollama
+end
+```
+
+The `adapters` block receives an `AdapterRegistrationContext`. Call `register` once per adapter, passing a symbol name and adapter class.
 
 ### `permissions`
 
@@ -104,11 +136,12 @@ The `permissions` block receives a `PermissionContext`. These are the spur's def
 
 Spur auto-registration uses a `TracePoint(:end)` hook. When a subclass of `Spurline::Spur` finishes its class body, the framework:
 
-1. Reads the `tools` and `permissions` declarations
+1. Reads the `tools`, `adapters`, and `permissions` declarations
 2. Records the spur in `Spurline::Spur.registry`
 3. Registers each tool into `Spurline::Agent.tool_registry` (if the Agent class is loaded)
+4. Registers each adapter into `Spurline::Agent.adapter_registry` (if the Agent class is loaded)
 
-This happens at require time. There is no explicit `install` or `activate` call. If a spur gem is in your Gemfile and required, its tools are available.
+This happens at require time. There is no explicit `install` or `activate` call. If a spur gem is in your Gemfile and required, its tools/adapters are available.
 
 ```ruby
 # After requiring spurline-web:
@@ -116,9 +149,17 @@ Spurline::Spur.registry
 # => {
 #      "spurline-web" => {
 #        tools: [:web_search, :scrape],
+#        adapters: [],
 #        permissions: { default_trust: :external, requires_confirmation: false, sandbox: false }
 #      }
 #    }
+```
+
+For an adapter spur:
+
+```ruby
+Spurline::Spur.registry[:local]
+# => { tools: [], adapters: [:ollama], permissions: {} }
 ```
 
 ---
@@ -134,6 +175,26 @@ end
 ```
 
 No special syntax. The agent does not need to know whether a tool came from a spur gem or was registered manually.
+
+## Using Spur Adapters in an Agent
+
+Once an adapter spur is required, use its adapter alias with `use_model`:
+
+```ruby
+require "spurline/local"
+
+class LocalAgent < Spurline::Agent
+  use_model :ollama, model: "llama3.2:latest"
+end
+```
+
+`use_model` forwards keyword args to the adapter constructor, so this also works:
+
+```ruby
+class RemoteLocalAgent < Spurline::Agent
+  use_model :ollama, host: "10.0.0.1", port: 8080, model: "codellama:7b"
+end
+```
 
 ---
 
@@ -214,9 +275,10 @@ end
 
 ## Internal DSL Contexts
 
-Two internal classes support the spur DSL. You do not interact with them directly, but knowing they exist helps when reading the source:
+Three internal classes support the spur DSL. You do not interact with them directly, but knowing they exist helps when reading the source:
 
 - `Spurline::Spur::ToolRegistrationContext` -- Collects `register` calls inside the `tools` block. Each call produces a `{ name:, tool_class: }` hash.
+- `Spurline::Spur::AdapterRegistrationContext` -- Collects `register` calls inside the `adapters` block. Each call produces a `{ name:, adapter_class: }` hash.
 - `Spurline::Spur::PermissionContext` -- Collects `default_trust`, `requires_confirmation`, and `sandbox` calls inside the `permissions` block. Produces a settings hash.
 
 Both are instantiated fresh for each DSL block evaluation and discarded after.
@@ -228,11 +290,12 @@ Both are instantiated fresh for each DSL block evaluation and discarded after.
 Before publishing a spur gem:
 
 - [ ] `spur_name` matches the gem name
-- [ ] Every tool class inherits from `Spurline::Tools::Base` and has a `tool_name`, `description`, and `parameters`
-- [ ] The `permissions` block declares sensible defaults for all tools
+- [ ] If this is a tool spur: every tool class inherits from `Spurline::Tools::Base` and has a `tool_name`, `description`, and `parameters`
+- [ ] If this is an adapter spur: the adapter class inherits from `Spurline::Adapters::Base` and implements `#stream`
+- [ ] If tools are registered: the `permissions` block declares sensible defaults
 - [ ] The gemspec lists `spurline-core` as a runtime dependency
 - [ ] Specs cover each tool in isolation (no live API calls)
-- [ ] The gem's entry point requires all tool files before defining the `Spur` subclass
+- [ ] The gem's entry point requires all needed files before defining the `Spur` subclass
 
 ---
 
