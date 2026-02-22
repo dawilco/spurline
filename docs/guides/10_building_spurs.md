@@ -4,6 +4,11 @@ Spurs are standard Ruby gems that package capabilities for distribution. A spur 
 
 **Prerequisites:** You should be comfortable [building tools](05_building_tools.md) and understand [tool permissions](06_tool_permissions.md).
 
+Bundled reference spurs in this repository:
+
+- `spurs/spurline-web-search`
+- `spurs/spurline-review`
+
 ---
 
 ## What a Spur Is

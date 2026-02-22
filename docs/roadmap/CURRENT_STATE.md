@@ -92,6 +92,7 @@ Bundled spur proof points now shipping:
 - `spurline-deploy`
 - `spurline-local`
 - `spurline-test`
+- `spurline-review`
 
 ### Personas — **Built**
 
@@ -214,4 +215,5 @@ Current three-tier model is implemented (credentials + tool declarations + runti
 - ~~M2.3 Scoped Tool Contexts~~ **Complete**
 - ~~M2.4 Two-Tier Scale Architecture~~ **Complete**
 - ~~M2.5 Idempotency Layer~~ **Complete**
-- **Milestone 3: Phase 3 Spurs** (spurline-test, spurline-deploy, spurline-review)
+- ~~M3.3 spurline-review~~ **Complete**
+- **Milestone 3: remaining Phase 3 spur work continues per roadmap**

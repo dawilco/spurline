@@ -94,6 +94,7 @@ Spurline ships bundled spur gems under `spurs/`:
 
 - `spurline-web-search` — Brave-powered web search (`:web_search`)
 - `spurline-test` — test framework detection, execution, and parsing (`:detect_test_framework`, `:run_tests`, `:parse_test_output`)
+- `spurline-review` — PR diff analysis and GitHub review comment tooling (`:fetch_pr_diff`, `:analyze_diff`, `:summarize_findings`, `:post_review_comment`)
 
 During local development you can wire a spur gem via path:
 
