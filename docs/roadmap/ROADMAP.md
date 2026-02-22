@@ -410,7 +410,13 @@ channels:
 
 Blocked on: Suspended sessions being solid. Getting presence wrong architecturally is expensive to fix once engineers are building on top of it.
 
-### 3.7 — SIP Spur (Voice Telephony)
+### 3.7 — Spur CLI Extensions
+
+Once Milestone 3 spurs are stable and their agent patterns are proven, add CLI commands that invoke them directly: `spur test`, `spur deploy`, `spur review`, `spur docs`. Each command is a thin wrapper around the spur's example agent — the agent is the interface, the CLI is a convenience shortcut.
+
+This is deliberately sequenced after the spurs ship, not with them. CLI commands imply stability and bake in an API commitment. The agent patterns need to be proven in real use before they get a CLI surface. Adding CLI extensions too early creates a parallel interface to maintain before the underlying workflow is settled.
+
+### 3.8 — SIP Spur (Voice Telephony)
 
 Agents as physical phone endpoints connecting to PBX systems (Asterisk, RingCentral, FreePBX). Ruby-native implementation following the Nokogiri model for bundled native extensions. Agents accessible via phone number.
 
