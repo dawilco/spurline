@@ -73,6 +73,18 @@ bundle exec spur console
 
 `spur new` now includes a project `README.md`, `.env.example`, and a starter `spec/agents/assistant_agent_spec.rb`.
 
+## Built-in Model Aliases
+
+Use these directly with `use_model`:
+
+- `:claude_sonnet`
+- `:claude_opus`
+- `:claude_haiku`
+- `:openai_gpt4o`
+- `:openai_gpt4o_mini`
+- `:openai_o3_mini`
+- `:stub`
+
 ## Core Concepts
 
 - `Spurline::Agent`: public API and lifecycle

@@ -14,12 +14,14 @@ module Spurline
     include Spurline::DSL::Guardrails
     include Spurline::DSL::Hooks
 
-    # Default model-to-adapter mapping. Each symbol maps to a Claude adapter
-    # configured with the appropriate model string.
+    # Default model-to-adapter mapping.
     DEFAULT_ADAPTERS = {
       claude_sonnet: { adapter: Spurline::Adapters::Claude, model: "claude-sonnet-4-20250514" },
       claude_opus: { adapter: Spurline::Adapters::Claude, model: "claude-opus-4-20250514" },
       claude_haiku: { adapter: Spurline::Adapters::Claude, model: "claude-haiku-4-5-20251001" },
+      openai_gpt4o: { adapter: Spurline::Adapters::OpenAI, model: "gpt-4o" },
+      openai_gpt4o_mini: { adapter: Spurline::Adapters::OpenAI, model: "gpt-4o-mini" },
+      openai_o3_mini: { adapter: Spurline::Adapters::OpenAI, model: "o3-mini" },
       stub: { adapter: Spurline::Adapters::StubAdapter },
     }.freeze
 
