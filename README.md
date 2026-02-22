@@ -21,6 +21,20 @@ Recent hardening shipped:
 - configurable in-memory audit retention (`audit_max_entries`)
 - stubbed integration coverage for guardrails, PII pipeline, SQLite round-trip/concurrency, memory overflow, streaming enumerator tool loops, and audit completeness
 
+## Bundled Spurs
+
+Spurline ships the framework as `spurline-core` and includes bundled reference spur gems under `spurs/`:
+
+- `spurline-web-search`: web search tools powered by Brave Search (`spurs/spurline-web-search`)
+- `spurline-deploy`: supervised deployment planning and execution with safety gates (`spurs/spurline-deploy`)
+
+`spurline-deploy` provides four tools:
+
+- `generate_deploy_plan` (idempotent by `repo_path`, `target`, `strategy`)
+- `validate_deploy_prereqs` (scoped prereq validation)
+- `execute_deploy_step` (always confirmation-gated, dry-run by default)
+- `rollback_deploy` (confirmation-gated rollback with optional auto-detect target version)
+
 ## Requirements
 
 - Ruby `>= 3.2`

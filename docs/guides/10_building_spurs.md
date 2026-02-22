@@ -14,9 +14,14 @@ A spur is a Ruby gem that:
 2. Declares its tools and default permissions via a small DSL
 3. Auto-registers those tools into the framework when the class body finishes loading
 
-The naming convention is `spurline-*`. For example: `spurline-web`, `spurline-voice`, `spurline-github`.
+The naming convention is `spurline-*`. For example: `spurline-web-search`, `spurline-deploy`, `spurline-github`.
 
 The framework ships as `spurline-core`. The `spurline-*` namespace is reserved for spur gems.
+
+Bundled reference implementations in this repository:
+
+- `spurs/spurline-web-search`
+- `spurs/spurline-deploy`
 
 ---
 
@@ -159,7 +164,7 @@ Gem::Specification.new do |s|
   s.name    = "spurline-web"
   s.version = SpurlineWeb::VERSION
   # ...
-  s.add_dependency "spurline-core", "~> 0.1"
+  s.add_dependency "spurline-core", "~> 0.2"
 end
 ```
 
