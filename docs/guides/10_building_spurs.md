@@ -4,6 +4,11 @@ Spurs are standard Ruby gems that package tools and their permissions for distri
 
 **Prerequisites:** You should be comfortable [building tools](05_building_tools.md) and understand [tool permissions](06_tool_permissions.md).
 
+Bundled reference spurs in this repository:
+
+- `spurs/spurline-web-search`
+- `spurs/spurline-review`
+
 ---
 
 ## What a Spur Is
@@ -159,7 +164,7 @@ Gem::Specification.new do |s|
   s.name    = "spurline-web"
   s.version = SpurlineWeb::VERSION
   # ...
-  s.add_dependency "spurline-core", "~> 0.1"
+  s.add_dependency "spurline-core", "~> 0.2"
 end
 ```
 

@@ -93,6 +93,13 @@ Use these directly with `use_model`:
 - `Spurline::Session::Session`: persistence/resumption boundary
 - `Spurline::Audit::Log`: structured trace of LLM/tool execution
 
+## Bundled Spurs
+
+Spurline ships bundled capability spurs as separate gems under `spurs/`:
+
+- `spurline-web-search`: Brave-powered web search tooling
+- `spurline-review`: PR diff analysis, structured findings, and GitHub review comment posting
+
 ## Documentation
 
 - [Getting Started](docs/guides/01_getting_started.md)

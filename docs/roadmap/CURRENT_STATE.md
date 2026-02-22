@@ -85,7 +85,7 @@ Gemini adapter remains unbuilt.
 
 ### Spur Ecosystem Contract — **Built**
 
-`Spurline::Spur` contract and deferred registration flow are implemented and active. Bundled spur proof point: `spurline-web-search`.
+`Spurline::Spur` contract and deferred registration flow are implemented and active. Bundled spur proof points: `spurline-web-search`, `spurline-review`.
 
 ### Personas — **Built**
 
@@ -208,4 +208,5 @@ Current three-tier model is implemented (credentials + tool declarations + runti
 - ~~M2.3 Scoped Tool Contexts~~ **Complete**
 - ~~M2.4 Two-Tier Scale Architecture~~ **Complete**
 - ~~M2.5 Idempotency Layer~~ **Complete**
-- **Milestone 3: Phase 3 Spurs** (spurline-test, spurline-deploy, spurline-review)
+- ~~M3.3 spurline-review~~ **Complete**
+- **Milestone 3: Phase 3 Spurs** remaining: `spurline-test`, `spurline-deploy`
