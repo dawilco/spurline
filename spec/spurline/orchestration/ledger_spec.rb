@@ -23,7 +23,7 @@ RSpec.describe Spurline::Orchestration::Ledger do
 
       expect {
         ledger.transition_to!(:merging)
-      }.to raise_error(described_class::LedgerError, /invalid transition/)
+      }.to raise_error(Spurline::LedgerError, /invalid transition/)
     end
   end
 
@@ -63,7 +63,7 @@ RSpec.describe Spurline::Orchestration::Ledger do
 
       expect {
         ledger.add_task(envelope("Late task"))
-      }.to raise_error(described_class::LedgerError, /planning/)
+      }.to raise_error(Spurline::LedgerError, /planning/)
     end
   end
 

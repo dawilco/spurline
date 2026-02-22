@@ -71,6 +71,11 @@ RSpec.describe Spurline::Agent do
       expect(agent.audit_log).to be_a(Spurline::Audit::Log)
     end
 
+    it "initializes session idempotency ledger metadata" do
+      agent = agent_class.new
+      expect(agent.session.metadata[:idempotency_ledger]).to be_a(Hash)
+    end
+
     it "exposes a vault reader" do
       agent = agent_class.new
       expect(agent.vault).to be_a(Spurline::Secrets::Vault)
@@ -232,6 +237,25 @@ RSpec.describe Spurline::Agent do
       agent.run("Echo something") { |_chunk| }
 
       expect(agent.audit_log.tool_calls.length).to eq(1)
+    end
+
+    it "passes scope and idempotency ledger through lifecycle tool execution" do
+      scope = Spurline::Tools::Scope.new(id: "eng-142", constraints: { paths: ["src/**"] })
+      agent = agent_class.new(scope: scope)
+      agent.use_stub_adapter(responses: [
+        stub_tool_call(:echo, message: "test"),
+        stub_text("Done"),
+      ])
+
+      tool_runner = agent.instance_variable_get(:@tool_runner)
+      expect(tool_runner).to receive(:execute).with(
+        anything,
+        session: agent.session,
+        scope: scope,
+        idempotency_ledger: agent.session.metadata[:idempotency_ledger]
+      ).and_call_original
+
+      agent.run("Echo something") { |_chunk| }
     end
 
     it "records llm boundary and tool_result replay events" do

@@ -121,3 +121,18 @@ Phase 3 spurs will consume RepoProfile to make intelligent decisions:
 - **spurline-deploy** reads `profile.entry_points` and `profile.ci.deploy_command`
 - **spurline-review** reads `profile.frameworks.lint` to review against project standards
 - **spurline-docs** reads the full profile to generate accurate setup documentation
+
+## Future: LLM-Enhanced Analysis
+
+Cartographer is deliberately LLM-free today. The six analyzer layers are deterministic — pattern matching, file parsing, regex. This means reproducible results, zero token cost, and full functionality in air-gapped environments. For well-structured projects, static analysis produces high-confidence profiles without any intelligence layer.
+
+But static analysis has a ceiling. Nonstandard project layouts, missing CI configs, ambiguous directory structures, and undocumented conventions all produce low-confidence profiles where pattern matching runs out of signal. The long-term vision is a framework that can adapt to anything thrown at it.
+
+A future `Cartographer::Enhancer` could take a completed `RepoProfile`, identify low-confidence areas, and make targeted LLM calls to fill gaps — reading a README to infer intent, interpreting unusual directory names, or resolving ambiguity that no regex can handle. The key design constraints:
+
+- The base `RepoProfile` from static analysis is always produced first and remains the foundation
+- LLM enhancement is opt-in, never automatic — the developer chooses to spend tokens
+- Enhanced fields are marked with their provenance so consumers know which data came from static analysis vs inference
+- The enhancer is a separate component, not wired into the analyzer layers — static analysis stays deterministic
+
+This is not currently on the roadmap. It is documented here so the design space is preserved when the time comes.

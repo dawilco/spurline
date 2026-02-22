@@ -6,8 +6,6 @@ module Spurline
   module Orchestration
     # Immutable work unit for worker execution.
     class TaskEnvelope
-      class TaskEnvelopeError < Spurline::AgentError; end
-
       CURRENT_VERSION = "1.0"
 
       attr_reader :task_id, :version, :instruction, :input_files,
@@ -112,22 +110,22 @@ module Spurline
       def validate_instruction!(value)
         return if value.to_s.strip != ""
 
-        raise TaskEnvelopeError, "instruction is required"
+        raise Spurline::TaskEnvelopeError, "instruction is required"
       end
 
       def validate_acceptance_criteria!(value)
         unless value.is_a?(Array) && !value.empty?
-          raise TaskEnvelopeError, "acceptance_criteria must be a non-empty array"
+          raise Spurline::TaskEnvelopeError, "acceptance_criteria must be a non-empty array"
         end
 
         if value.any? { |criterion| criterion.to_s.strip.empty? }
-          raise TaskEnvelopeError, "acceptance_criteria entries must be non-empty"
+          raise Spurline::TaskEnvelopeError, "acceptance_criteria entries must be non-empty"
         end
       end
 
       def validate_limit!(value, name:)
         unless value.is_a?(Integer) && value.positive?
-          raise TaskEnvelopeError, "#{name} must be a positive integer"
+          raise Spurline::TaskEnvelopeError, "#{name} must be a positive integer"
         end
       end
 

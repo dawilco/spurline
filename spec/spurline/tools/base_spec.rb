@@ -104,6 +104,40 @@ RSpec.describe Spurline::Tools::Base do
         expect(empty_tool.declared_secrets).to eq([])
       end
     end
+
+    describe "idempotency class methods" do
+      it "defaults idempotent? to false" do
+        plain_tool = Class.new(described_class)
+        expect(plain_tool.idempotent?).to be(false)
+      end
+
+      it "stores idempotency key params and ttl" do
+        idempotent_tool = Class.new(described_class) do
+          idempotent true
+          idempotency_key :transaction_id, :order_id
+          idempotency_ttl 120
+        end
+
+        expect(idempotent_tool.idempotent?).to be(true)
+        expect(idempotent_tool.idempotency_key_params).to eq(%i[transaction_id order_id])
+        expect(idempotent_tool.idempotency_ttl_value).to eq(120)
+      end
+    end
+
+    describe "scope class methods" do
+      it "defaults scoped? to false" do
+        plain_tool = Class.new(described_class)
+        expect(plain_tool.scoped?).to be(false)
+      end
+
+      it "allows scoped tools to opt in" do
+        scoped_tool = Class.new(described_class) do
+          scoped true
+        end
+
+        expect(scoped_tool.scoped?).to be(true)
+      end
+    end
   end
 
   describe "#call" do

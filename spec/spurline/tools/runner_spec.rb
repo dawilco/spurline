@@ -269,6 +269,121 @@ RSpec.describe Spurline::Tools::Runner do
       )
       expect(recorded.inspect).not_to include("secret-injected-value")
     end
+
+    it "injects _scope into scoped tools and records scope_id" do
+      scoped_tool = Class.new(Spurline::Tools::Base) do
+        tool_name :scoped_echo
+        scoped true
+
+        def call(message:, _scope:)
+          "Echo: #{message} [scope=#{_scope&.id}]"
+        end
+      end
+      registry.register(:scoped_echo, scoped_tool)
+
+      scope = Spurline::Tools::Scope.new(id: "eng-142", constraints: { paths: ["src/**"] })
+      tool_call = { name: :scoped_echo, arguments: { message: "hello" } }
+      result = runner.execute(tool_call, session: session, scope: scope)
+
+      expect(result.text).to include("scope=eng-142")
+      expect(session.current_turn.tool_calls.first[:scope_id]).to eq("eng-142")
+    end
+
+    it "raises ScopeViolationError when scoped tool enforces out-of-scope access" do
+      scoped_tool = Class.new(Spurline::Tools::Base) do
+        tool_name :scoped_guard
+        scoped true
+
+        def call(path:, _scope:)
+          _scope.enforce!(path, type: :path)
+          "ok"
+        end
+      end
+      registry.register(:scoped_guard, scoped_tool)
+
+      scope = Spurline::Tools::Scope.new(id: "eng-142", constraints: { paths: ["src/auth/**"] })
+
+      expect {
+        runner.execute(
+          { name: :scoped_guard, arguments: { path: "src/billing/charge.rb" } },
+          session: session,
+          scope: scope
+        )
+      }.to raise_error(Spurline::ScopeViolationError)
+    end
+
+    it "raises ScopeViolationError when scoped tool is called without scope" do
+      scoped_tool = Class.new(Spurline::Tools::Base) do
+        tool_name :scoped_required
+        scoped true
+
+        def call(path:, _scope:)
+          _scope.enforce!(path, type: :path)
+        end
+      end
+      registry.register(:scoped_required, scoped_tool)
+
+      expect {
+        runner.execute(
+          { name: :scoped_required, arguments: { path: "src/auth/login.rb" } },
+          session: session
+        )
+      }.to raise_error(Spurline::ScopeViolationError, /requires a scope/)
+    end
+
+    it "uses cached results for idempotent tools on repeated calls" do
+      call_count = 0
+      idempotent_tool = Class.new(Spurline::Tools::Base) do
+        tool_name :idempotent_echo
+        idempotent true
+        idempotency_key :message
+
+        define_method(:call) do |message:|
+          call_count += 1
+          "Echo: #{message}:#{call_count}"
+        end
+      end
+      registry.register(:idempotent_echo, idempotent_tool)
+
+      ledger_store = {}
+      tool_call = { name: :idempotent_echo, arguments: { message: "same" } }
+
+      first = runner.execute(tool_call, session: session, idempotency_ledger: ledger_store)
+      second = runner.execute(tool_call, session: session, idempotency_ledger: ledger_store)
+
+      expect(first.text).to eq(second.text)
+      expect(session.current_turn.tool_calls.first[:was_cached]).to eq(false)
+      expect(session.current_turn.tool_calls.last[:was_cached]).to eq(true)
+      expect(call_count).to eq(1)
+    end
+
+    it "raises IdempotencyKeyConflictError when same key is reused with different args" do
+      conflict_tool = Class.new(Spurline::Tools::Base) do
+        tool_name :conflict_echo
+        idempotent true
+        idempotency_key :transaction_id
+
+        def call(transaction_id:, amount_cents:)
+          "#{transaction_id}:#{amount_cents}"
+        end
+      end
+      registry.register(:conflict_echo, conflict_tool)
+
+      ledger_store = {}
+      runner.execute(
+        { name: :conflict_echo, arguments: { transaction_id: "tx-1", amount_cents: 100 } },
+        session: session,
+        idempotency_ledger: ledger_store
+      )
+
+      expect {
+        runner.execute(
+          { name: :conflict_echo, arguments: { transaction_id: "tx-1", amount_cents: 200 } },
+          session: session,
+          idempotency_ledger: ledger_store
+        )
+      }.to raise_error(Spurline::IdempotencyKeyConflictError)
+    end
   end
 
   describe "permissions" do

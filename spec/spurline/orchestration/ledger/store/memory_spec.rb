@@ -48,7 +48,7 @@ RSpec.describe Spurline::Orchestration::Ledger::Store::Memory do
 
       expect {
         store.load_ledger("missing")
-      }.to raise_error(Spurline::Orchestration::Ledger::LedgerError, /ledger not found/)
+      }.to raise_error(Spurline::LedgerError, /ledger not found/)
     end
   end
 

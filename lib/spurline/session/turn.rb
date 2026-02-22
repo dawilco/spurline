@@ -38,14 +38,28 @@ module Spurline
         @metadata[:duration_ms] = duration_ms
       end
 
-      def record_tool_call(name:, arguments:, result:, duration_ms:)
-        @tool_calls << {
+      def record_tool_call(
+        name:,
+        arguments:,
+        result:,
+        duration_ms:,
+        scope_id: nil,
+        idempotency_key: nil,
+        was_cached: nil,
+        cache_age_ms: nil
+      )
+        entry = {
           name: name,
           arguments: arguments,
           result: result,
           duration_ms: duration_ms,
           timestamp: Time.now,
         }
+        entry[:scope_id] = scope_id unless scope_id.nil?
+        entry[:idempotency_key] = idempotency_key unless idempotency_key.nil?
+        entry[:was_cached] = was_cached unless was_cached.nil?
+        entry[:cache_age_ms] = cache_age_ms unless cache_age_ms.nil?
+        @tool_calls << entry
       end
 
       # Duration in seconds (float).

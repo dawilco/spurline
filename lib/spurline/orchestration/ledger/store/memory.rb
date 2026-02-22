@@ -19,7 +19,7 @@ module Spurline
 
           def load_ledger(id)
             payload = @mutex.synchronize { @ledgers[id.to_s] }
-            raise Spurline::Orchestration::Ledger::LedgerError, "ledger not found: #{id}" if payload.nil?
+            raise Spurline::LedgerError, "ledger not found: #{id}" if payload.nil?
 
             Spurline::Orchestration::Ledger.from_h(payload, store: self)
           end

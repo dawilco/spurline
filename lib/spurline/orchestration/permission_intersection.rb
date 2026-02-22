@@ -3,8 +3,6 @@
 module Spurline
   module Orchestration
     module PermissionIntersection
-      class PrivilegeEscalationError < Spurline::AgentError; end
-
       module_function
 
       # Computes effective parent->child permissions under the setuid rule.
@@ -75,14 +73,14 @@ module Spurline
       def validate_denied!(tool_name, parent_tool, child_tool)
         return unless truthy?(parent_tool[:denied]) && !truthy?(child_tool[:denied])
 
-        raise PrivilegeEscalationError, "child tool #{tool_name} removes denied=true"
+        raise Spurline::PrivilegeEscalationError, "child tool #{tool_name} removes denied=true"
       end
       private_class_method :validate_denied!
 
       def validate_requires_confirmation!(tool_name, parent_tool, child_tool)
         return unless truthy?(parent_tool[:requires_confirmation]) && !truthy?(child_tool[:requires_confirmation])
 
-        raise PrivilegeEscalationError, "child tool #{tool_name} removes requires_confirmation=true"
+        raise Spurline::PrivilegeEscalationError, "child tool #{tool_name} removes requires_confirmation=true"
       end
       private_class_method :validate_requires_confirmation!
 
@@ -93,14 +91,14 @@ module Spurline
         return if parent_users.nil?
 
         if child_users.nil?
-          raise PrivilegeEscalationError,
+          raise Spurline::PrivilegeEscalationError,
                 "child tool #{tool_name} omits allowed_users while parent restricts it"
         end
 
         extra_users = child_users - parent_users
         return if extra_users.empty?
 
-        raise PrivilegeEscalationError,
+        raise Spurline::PrivilegeEscalationError,
               "child tool #{tool_name} adds users not allowed by parent: #{extra_users.join(", ")}"
       end
       private_class_method :validate_allowed_users!

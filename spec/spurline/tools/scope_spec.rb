@@ -1,12 +1,6 @@
 # frozen_string_literal: true
 
 RSpec.describe Spurline::Tools::Scope do
-  before do
-    unless defined?(Spurline::ScopeViolationError)
-      stub_const("Spurline::ScopeViolationError", Class.new(Spurline::AgentError))
-    end
-  end
-
   describe "creation" do
     it "creates with all valid types" do
       described_class::TYPES.each do |type|

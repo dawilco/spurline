@@ -7,8 +7,6 @@ module Spurline
   module Orchestration
     # Workflow state machine for planner/worker/judge orchestration.
     class Ledger
-      class LedgerError < Spurline::AgentError; end
-
       STATES = %i[planning executing merging complete error].freeze
 
       VALID_TRANSITIONS = {
@@ -43,7 +41,7 @@ module Spurline
 
         normalized = normalize_envelope(envelope)
         task_id = normalized.task_id
-        raise LedgerError, "task already exists: #{task_id}" if @tasks.key?(task_id)
+        raise Spurline::LedgerError, "task already exists: #{task_id}" if @tasks.key?(task_id)
 
         @tasks[task_id] = {
           envelope: normalized,
@@ -66,7 +64,7 @@ module Spurline
         fetch_task!(depends_on)
 
         if task_id == depends_on
-          raise LedgerError, "task cannot depend on itself: #{task_id}"
+          raise Spurline::LedgerError, "task cannot depend on itself: #{task_id}"
         end
 
         deps = (@dependency_graph[task_id] ||= [])
@@ -80,7 +78,7 @@ module Spurline
         ensure_task_state!(task_id, expected: :pending)
 
         if worker_session_id.to_s.strip.empty?
-          raise LedgerError, "worker_session_id is required"
+          raise Spurline::LedgerError, "worker_session_id is required"
         end
 
         task[:state] = :assigned
@@ -148,12 +146,12 @@ module Spurline
         target = new_state.to_sym
 
         unless STATES.include?(target)
-          raise LedgerError, "invalid ledger state: #{new_state.inspect}"
+          raise Spurline::LedgerError, "invalid ledger state: #{new_state.inspect}"
         end
 
         allowed = VALID_TRANSITIONS.fetch(@state)
         unless allowed.include?(target)
-          raise LedgerError, "invalid transition #{@state} -> #{target}"
+          raise Spurline::LedgerError, "invalid transition #{@state} -> #{target}"
         end
 
         @state = target
@@ -180,7 +178,7 @@ module Spurline
 
         state = (fetch_key(hash, :state) || :planning).to_sym
         unless STATES.include?(state)
-          raise LedgerError, "invalid ledger state: #{state.inspect}"
+          raise Spurline::LedgerError, "invalid ledger state: #{state.inspect}"
         end
 
         plan = Array(fetch_key(hash, :plan) || []).map(&:to_s)
@@ -211,13 +209,13 @@ module Spurline
           return TaskEnvelope.from_h(envelope)
         end
 
-        raise LedgerError, "envelope must be a TaskEnvelope or Hash"
+        raise Spurline::LedgerError, "envelope must be a TaskEnvelope or Hash"
       end
 
       def fetch_task!(task_id)
         id = task_id.to_s
         @tasks.fetch(id) do
-          raise LedgerError, "unknown task: #{id}"
+          raise Spurline::LedgerError, "unknown task: #{id}"
         end
       end
 
@@ -225,20 +223,20 @@ module Spurline
         actual = task_status(task_id)
         return if actual == expected
 
-        raise LedgerError, "task #{task_id} must be #{expected}, got #{actual}"
+        raise Spurline::LedgerError, "task #{task_id} must be #{expected}, got #{actual}"
       end
 
       def ensure_task_state_in!(task_id, expected:)
         actual = task_status(task_id)
         return if expected.include?(actual)
 
-        raise LedgerError, "task #{task_id} must be one of #{expected.inspect}, got #{actual}"
+        raise Spurline::LedgerError, "task #{task_id} must be one of #{expected.inspect}, got #{actual}"
       end
 
       def assert_state!(expected, message)
         return if state == expected
 
-        raise LedgerError, message
+        raise Spurline::LedgerError, message
       end
 
       def select_tasks_by_state(target)
@@ -298,14 +296,14 @@ module Spurline
           (raw_tasks || {}).each_with_object({}) do |(task_id, task_data), deserialized|
             task_hash = task_data || {}
             envelope_data = fetch_key(task_hash, :envelope, required: true) do
-              raise LedgerError, "task #{task_id} missing envelope"
+              raise Spurline::LedgerError, "task #{task_id} missing envelope"
             end
 
             envelope = envelope_data.is_a?(TaskEnvelope) ? envelope_data : TaskEnvelope.from_h(envelope_data)
             task_state = (fetch_key(task_hash, :state) || :pending).to_sym
 
             unless TASK_STATES.include?(task_state)
-              raise LedgerError, "invalid task state for #{task_id}: #{task_state.inspect}"
+              raise Spurline::LedgerError, "invalid task state for #{task_id}: #{task_state.inspect}"
             end
 
             deserialized[task_id.to_s] = {

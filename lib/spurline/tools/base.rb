@@ -79,16 +79,87 @@ module Spurline
         end
 
         def requires_confirmation?
-          @requires_confirmation || false
+          return @requires_confirmation unless @requires_confirmation.nil?
+
+          return superclass.requires_confirmation? if superclass.respond_to?(:requires_confirmation?)
+
+          false
         end
 
         # Declares a timeout in seconds for tool execution.
         def timeout(seconds = nil)
-          if seconds
+          unless seconds.nil?
             @timeout = seconds
           else
             @timeout
           end
+        end
+
+        # Declares that tool calls are idempotent and can be cached by key.
+        def idempotent(val = true)
+          @idempotent = val
+        end
+
+        def idempotent?
+          return @idempotent unless @idempotent.nil?
+
+          return superclass.idempotent? if superclass.respond_to?(:idempotent?)
+
+          false
+        end
+
+        # Declares which params form the idempotency key.
+        def idempotency_key(*params)
+          @idempotency_key_params = params.flatten.map(&:to_sym)
+        end
+
+        def idempotency_key_params
+          return @idempotency_key_params if instance_variable_defined?(:@idempotency_key_params)
+
+          return superclass.idempotency_key_params if superclass.respond_to?(:idempotency_key_params)
+
+          nil
+        end
+
+        # Declares cache TTL (seconds) for idempotent results.
+        def idempotency_ttl(seconds = nil)
+          unless seconds.nil?
+            @idempotency_ttl = seconds
+          end
+          @idempotency_ttl
+        end
+
+        def idempotency_ttl_value
+          ttl = idempotency_ttl
+          return ttl unless ttl.nil?
+
+          if superclass.respond_to?(:idempotency_ttl_value)
+            return superclass.idempotency_ttl_value
+          end
+
+          default_ttl = Spurline.config.idempotency_default_ttl
+          return default_ttl unless default_ttl.nil?
+
+          Spurline::Tools::Idempotency::Ledger::DEFAULT_TTL
+        end
+
+        # Declares a custom key lambda taking the final args hash.
+        def idempotency_key_fn(fn = nil)
+          @idempotency_key_fn = fn if fn
+          @idempotency_key_fn
+        end
+
+        # Declares that tool expects injected _scope keyword argument.
+        def scoped(val = true)
+          @scoped = val
+        end
+
+        def scoped?
+          return @scoped unless @scoped.nil?
+
+          return superclass.scoped? if superclass.respond_to?(:scoped?)
+
+          false
         end
 
         # Validates arguments against the tool's parameter schema.

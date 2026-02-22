@@ -13,7 +13,18 @@ module Spurline
     #   - max_tool_calls exceeded
     #   - max_turns exceeded (multi-loop safety valve)
     class Runner
-      def initialize(adapter:, pipeline:, tool_runner:, memory:, assembler:, audit:, guardrails:, suspension_check: nil)
+      def initialize(
+        adapter:,
+        pipeline:,
+        tool_runner:,
+        memory:,
+        assembler:,
+        audit:,
+        guardrails:,
+        suspension_check: nil,
+        scope: nil,
+        idempotency_ledger: nil
+      )
         @adapter = adapter
         @pipeline = pipeline
         @tool_runner = tool_runner
@@ -22,6 +33,8 @@ module Spurline
         @audit = audit
         @guardrails = guardrails
         @suspension_check = suspension_check || Lifecycle::SuspensionCheck.none
+        @scope = scope
+        @idempotency_ledger = idempotency_ledger
         @loop_count = 0
         @messages_so_far = []
         @last_tool_result = nil
@@ -153,7 +166,12 @@ module Spurline
 
               # 5. Execute tool
               started = Time.now
-              result = @tool_runner.execute(tool_call, session: session)
+              result = @tool_runner.execute(
+                tool_call,
+                session: session,
+                scope: @scope,
+                idempotency_ledger: @idempotency_ledger
+              )
               duration_ms = ((Time.now - started) * 1000).round
 
               @audit.record(:tool_call,

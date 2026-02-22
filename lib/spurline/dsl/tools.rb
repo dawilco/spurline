@@ -14,6 +14,13 @@ module Spurline
       end
 
       module ClassMethods
+        IDEMPOTENCY_OPTION_KEYS = %i[
+          idempotent
+          idempotency_key
+          idempotency_ttl
+          idempotency_key_fn
+        ].freeze
+
         def tools(*tool_names, **tool_configs)
           @tool_config ||= { names: [], configs: {} }
           tool_names.each { |name| @tool_config[:names] << name.to_sym }
@@ -39,6 +46,18 @@ module Spurline
         # Returns per-tool configuration for a specific tool.
         def tool_config_for(tool_name)
           tool_config[:configs][tool_name.to_sym] || {}
+        end
+
+        # Effective per-tool idempotency options from DSL config.
+        def idempotency_config
+          tool_config[:configs].each_with_object({}) do |(tool_name, config), result|
+            next unless config.is_a?(Hash)
+
+            options = symbolize_hash(config).slice(*IDEMPOTENCY_OPTION_KEYS)
+            next if options.empty?
+
+            result[tool_name.to_sym] = options
+          end
         end
 
         # Effective permissions applied by Tools::Runner.

@@ -114,4 +114,25 @@ RSpec.describe Spurline::DSL::Tools do
       )
     end
   end
+
+  describe ".idempotency_config" do
+    it "extracts only idempotency options from tool DSL config" do
+      agent_class = Class.new(Spurline::Agent) do
+        tools payment_create: {
+          idempotent: true,
+          idempotency_key: :transaction_id,
+          idempotency_ttl: 600,
+          requires_confirmation: true,
+        }
+      end
+
+      expect(agent_class.idempotency_config).to eq(
+        payment_create: {
+          idempotent: true,
+          idempotency_key: :transaction_id,
+          idempotency_ttl: 600,
+        }
+      )
+    end
+  end
 end

@@ -62,7 +62,7 @@ RSpec.describe Spurline::Orchestration::PermissionIntersection do
 
       expect {
         described_class.validate_no_escalation!(parent, child)
-      }.to raise_error(Spurline::Orchestration::PermissionIntersection::PrivilegeEscalationError)
+      }.to raise_error(Spurline::PrivilegeEscalationError)
     end
   end
 end

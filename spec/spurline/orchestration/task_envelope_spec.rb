@@ -38,14 +38,14 @@ RSpec.describe Spurline::Orchestration::TaskEnvelope do
     it "raises when instruction is missing" do
       expect {
         described_class.new(instruction: " ", acceptance_criteria: ["foo"])
-      }.to raise_error(Spurline::Orchestration::TaskEnvelope::TaskEnvelopeError, /instruction is required/)
+      }.to raise_error(Spurline::TaskEnvelopeError, /instruction is required/)
     end
 
     it "raises when acceptance_criteria is empty" do
       expect {
         described_class.new(instruction: "Build", acceptance_criteria: [])
       }.to raise_error(
-        Spurline::Orchestration::TaskEnvelope::TaskEnvelopeError,
+        Spurline::TaskEnvelopeError,
         /acceptance_criteria must be a non-empty array/
       )
     end

@@ -18,7 +18,7 @@ module Spurline
   class Agent < Base
     attr_reader :session, :state, :audit_log, :vault
 
-    def initialize(user: nil, session_id: nil, persona: :default, **opts)
+    def initialize(user: nil, session_id: nil, persona: :default, scope: nil, **opts)
       @user = user
       @session = Session::Session.load_or_create(
         id: session_id,
@@ -26,6 +26,8 @@ module Spurline
         agent_class: self.class.name,
         user: user
       )
+      @scope = scope
+      @idempotency_ledger = @session.metadata[:idempotency_ledger] ||= {}
       @persona = resolve_persona(persona)
       @memory = Memory::Manager.new(config: self.class.memory_config)
       @vault = Secrets::Vault.new
@@ -39,7 +41,8 @@ module Spurline
         registry: self.class.tool_registry,
         guardrails: guardrail_settings,
         permissions: self.class.respond_to?(:permissions_config) ? self.class.permissions_config : {},
-        secret_resolver: secret_resolver
+        secret_resolver: secret_resolver,
+        idempotency_configs: self.class.respond_to?(:idempotency_config) ? self.class.idempotency_config : {}
       )
       @pipeline = Security::ContextPipeline.new(guardrails: guardrail_settings)
       @adapter = resolve_adapter
@@ -151,7 +154,9 @@ module Spurline
         assembler: @assembler,
         audit: @audit_log,
         guardrails: guardrail_settings,
-        suspension_check: effective_suspension_check(suspension_check)
+        suspension_check: effective_suspension_check(suspension_check),
+        scope: @scope,
+        idempotency_ledger: @idempotency_ledger
       )
 
       runner.run(

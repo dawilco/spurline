@@ -282,15 +282,9 @@ module Spurline
       end
 
       def raise_scope_violation!(resource, type)
-        error_class = if Spurline.const_defined?(:ScopeViolationError)
-                        Spurline::ScopeViolationError
-                      else
-                        Spurline::AgentError
-                      end
-
         type_suffix = type ? " (resource type: #{type})" : ""
 
-        raise error_class,
+        raise Spurline::ScopeViolationError,
           "Scope '#{id}' (#{self.type}) does not permit resource '#{resource}'#{type_suffix}."
       end
 

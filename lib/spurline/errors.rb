@@ -92,4 +92,10 @@ module Spurline
 
   # Raised when an individual analyzer fails to produce valid output.
   class AnalyzerError < AgentError; end
+  class ScopeViolationError < AgentError; end
+  class IdempotencyKeyConflictError < AgentError; end
+  class PrivilegeEscalationError < AgentError; end
+  class LedgerError < AgentError; end
+  class TaskEnvelopeError < AgentError; end
+  class MergeConflictError < AgentError; end
 end

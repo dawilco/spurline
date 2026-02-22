@@ -313,6 +313,40 @@ The idempotency key is computed, checked against the session's idempotency store
 
 ---
 
+## Milestone 2.6 — Framework Dashboard (v0.3 → v0.4)
+
+**Outcome:** A developer can mount a web UI in one line and immediately see what their agents are doing — sessions, trust pipeline decisions, tool execution, and orchestration state. Debugging agents no longer requires reading raw JSON or attaching a console.
+
+See `docs/architecture/SPURLINE_DASHBOARD.md` for the full design document.
+
+### Why Here in the Sequence
+
+The dashboard sits between Milestone 2 (Autonomous Agents) and Milestone 3 (Agentic Development Platform) deliberately. Milestone 2 completes the runtime infrastructure — sessions, suspension, scoped contexts, orchestration. The dashboard makes all of that observable. Teams building Milestone 3 spurs (spurline-test, spurline-deploy, spurline-review) need the dashboard to debug their work. Shipping platform spurs without observability tooling is shipping blind.
+
+### Delivery Phases
+
+**Phase 1 — Session Browser + Agent Overview.** The minimum viable dashboard. List sessions, drill into turns with trust-annotated content objects, see agent class configuration. Rack-mountable, server-rendered, zero build step. This alone replaces console debugging for most workflows.
+
+**Phase 2 — Trust Pipeline Inspector + Tool Log.** The security-specific views. For any turn, show the full pipeline execution: what entered, which gates fired, what was filtered, what reached the LLM. Blocked injection attempts are surfaced explicitly. Tool execution log with redacted sensitive arguments, timing, and idempotency cache hits.
+
+**Phase 3 — Orchestration Viewer.** Visualize the workflow ledger from ADR-005: plan decomposition, task envelopes, worker status, judge verdicts, merge queue state and conflicts. Shows the dependency graph with blocked/failed task highlighting.
+
+**Phase 4 — Spur Registry + Health.** Loaded spurs, versions, declared tools, configuration, and health checks. Lower priority in early adoption; valuable as the ecosystem grows.
+
+### Technical Decisions
+
+- **Rack-mountable** — mounts in one line in Rails, Sinatra, Roda, or bare Rack
+- **Server-rendered** — ERB templates, bundled CSS, vanilla JS only where interactivity requires it (no React, no webpack, no node_modules)
+- **Read-only** — reads from the existing configured session store; adds no new storage requirements
+- **No built-in auth** — developer protects the mount point via host application auth, same as Sidekiq's web UI
+- **Monorepo gem** — `gems/spurline-dashboard/` with dependency on `spurline-core` and a lightweight Rack framework (Sinatra or Roda, TBD)
+
+### Dependencies
+
+Durable session store (Milestone 0.1), audit log (Milestone 0.5), orchestration ledger (Milestone 2.4). Phase 1 can ship as soon as session browsing is useful; later phases layer on as the underlying infrastructure matures.
+
+---
+
 ## Milestone 3 — Agentic Development Platform (v0.4+)
 
 **Outcome:** Spurline is the obvious choice for teams building agents that participate in a software development lifecycle. The spur ecosystem makes the common agentic dev tasks available as high-quality, composable components.
@@ -430,6 +464,9 @@ These are architectural questions that need ADRs before implementation begins:
 | Merge Queue conflict detection strategy (line-level, AST-level, or file-level?) | Milestone 2.4 | Determines quality ceiling for parallel code modification |
 | Judge implementation (separate agent, inline function, or pluggable?) | Milestone 2.4 | Affects latency and cost of the evaluation gate |
 | Task envelope versioning (schema versioned like RepoProfile?) | Milestone 2.4 | Determines forward compatibility for planner/worker protocol |
+| Dashboard micro-framework (Sinatra vs Roda) | Milestone 2.6 | Roda is lighter; Sinatra has broader recognition. Both are proven. |
+| Dashboard auto-refresh strategy (polling vs SSE) | Milestone 2.6 | Polling is simpler; SSE is nicer for watching live sessions |
+| Dashboard versioning relative to core (shared vs independent semver) | Milestone 2.6 | Affects release cadence and compatibility expectations |
 
 ---
 
