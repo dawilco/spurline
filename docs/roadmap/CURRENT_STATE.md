@@ -89,10 +89,11 @@ Gemini adapter remains unbuilt.
 Bundled spur proof points now shipping:
 
 - `spurline-web-search`
+- `spurline-test`
+- `spurline-docs`
+- `spurline-review`
 - `spurline-deploy`
 - `spurline-local`
-- `spurline-test`
-- `spurline-review`
 
 ### Personas — **Built**
 
@@ -121,7 +122,7 @@ Generators include usable scaffolds with validation-ready project structure (`co
 
 ### Testing Surface — **Built**
 
-- 828 examples passing (0 failures, 4 pending for Postgres-availability scenarios)
+- 846 examples passing (0 failures, 4 pending for Postgres-availability scenarios)
 - Full stubbed lifecycle integration coverage now includes 8 focused integration specs across guardrails, streaming, memory, session persistence/concurrency, and audit completeness
 - `Spurline::Testing` now includes:
   - `stub_text`
@@ -149,7 +150,7 @@ Generators include usable scaffolds with validation-ready project structure (`co
 
 ---
 
-## Milestone 2 (Autonomous Agents — Complete, 828 specs)
+## Milestone 2 (Autonomous Agents — Complete)
 
 ### Cartographer (M2.1) — **Built**
 
@@ -196,6 +197,30 @@ Integration wiring into Runner is complete — idempotent tools check cache befo
 
 ---
 
+## Milestone 3 (Agentic Development Platform — Complete, 846 specs)
+
+### spurline-test (M3.1) — **Built**
+
+3 tools (`RunTests`, `ParseTestOutput`, `DetectTestFramework`) + 6 test output parsers (RSpec, Pytest, Jest, Go Test, Cargo Test, Minitest) + `TestRunnerAgent`. Uses Cartographer `RepoProfile` CI config as ground truth for test commands. Scoped execution, idempotent framework detection.
+
+### spurline-docs (M3.2) — **Built**
+
+4 tools (`GenerateGettingStarted`, `GenerateEnvGuide`, `GenerateApiReference`, `WriteDocFile`) + 4 route analyzers (Rails, Sinatra, Express, Flask) + `DocGeneratorAgent`. Generates accurate documentation from RepoProfile ground truth. `WriteDocFile` requires confirmation and enforces path traversal protection.
+
+### spurline-review (M3.3) — **Built**
+
+4 tools (`AnalyzeDiff`, `FetchPRDiff`, `PostReviewComment`, `SummarizeFindings`) + unified diff parser + GitHub API client + `CodeReviewAgent`. Scoped diff analysis, idempotent comment posting (prevents duplicates), agent suspends after posting review to await reviewer questions.
+
+### spurline-deploy (M3.4) — **Built**
+
+4 tools (`GenerateDeployPlan`, `ValidateDeployPrereqs`, `ExecuteDeployStep`, `RollbackDeploy`) + plan builder + prereq checker + command executor + `DeployAgent`. `ExecuteDeployStep` always requires confirmation and defaults to dry-run. Agent suspends after plan generation for human review. Dangerous command validation.
+
+### spurline-local (M3.5) — **Built**
+
+Ollama adapter for local LLM inference via HTTP API. `Adapters::Ollama` streams NDJSON, maps OpenAI-compatible tool format, no API key required. Includes `ModelManager` (list/pull/info), `HealthCheck` (connectivity probe). Extended `Spurline::Spur` contract with `adapters` DSL block. Fixed `Agent#resolve_adapter` to forward `use_model` kwargs.
+
+---
+
 ## What Is Not Yet Built
 
 ### Multi-Channel Presence — **Not designed**
@@ -215,5 +240,9 @@ Current three-tier model is implemented (credentials + tool declarations + runti
 - ~~M2.3 Scoped Tool Contexts~~ **Complete**
 - ~~M2.4 Two-Tier Scale Architecture~~ **Complete**
 - ~~M2.5 Idempotency Layer~~ **Complete**
+- ~~M3.1 spurline-test~~ **Complete**
+- ~~M3.2 spurline-docs~~ **Complete**
 - ~~M3.3 spurline-review~~ **Complete**
-- **Milestone 3: remaining Phase 3 spur work continues per roadmap**
+- ~~M3.4 spurline-deploy~~ **Complete**
+- ~~M3.5 spurline-local~~ **Complete**
+- **Milestone 4: Multi-Channel Presence, Skills Layer, Dashboard**

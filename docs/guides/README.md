@@ -41,6 +41,16 @@ Read these sequentially to build understanding, or jump to any guide for a speci
 - [Scoped Tool Contexts](17_scoped_contexts.md) — Constrain tool access by branch, PR, or repo
 - [Multi-Agent Orchestration](18_multi_agent.md) — Two-tier scale architecture with TaskEnvelope, Ledger, Judge, and MergeQueue
 
+## Bundled Spurs
+
+- [Spurline Test](19_spurline_test.md) — Test execution and result parsing across frameworks
+- [Spurline Docs](20_spurline_docs.md) — Documentation generation from repository analysis
+- [Spurline Review](21_spurline_review.md) — Pull request code review with structured feedback
+- [Spurline Deploy](22_spurline_deploy.md) — Deployment planning and supervised execution
+- [Spurline Local](23_spurline_local.md) — Local LLM inference via Ollama
+
+For building your own spurs, see [Building Spur Gems](10_building_spurs.md).
+
 ## Advanced
 
 - [Building Spur Gems](10_building_spurs.md) — Package tools as distributable gems
