@@ -4,12 +4,13 @@ module Spurline
   module Memory
     # Orchestrates short-term and long-term memory stores.
     class Manager
-      attr_reader :short_term, :long_term
+      attr_reader :short_term, :long_term, :episodic
 
       def initialize(config: {})
         window = config.fetch(:short_term, {}).fetch(:window, ShortTerm::DEFAULT_WINDOW)
         @short_term = ShortTerm.new(window: window)
         @long_term = build_long_term_store(config.fetch(:long_term, nil))
+        @episodic = build_episodic_store(config.fetch(:episodic, nil))
       end
 
       def add_turn(turn)
@@ -39,12 +40,32 @@ module Spurline
       def clear!
         short_term.clear!
         long_term&.clear!
+        episodic&.clear!
       end
 
       # Whether any turns have been evicted from the window.
       # Useful for determining if summarization should kick in.
       def window_overflowed?
         !short_term.last_evicted.nil?
+      end
+
+      def record_episode(type:, content:, metadata: {}, turn_number: nil, parent_episode_id: nil, timestamp: Time.now)
+        return nil unless episodic
+
+        episodic.record(
+          type: type,
+          content: content,
+          metadata: metadata,
+          turn_number: turn_number,
+          parent_episode_id: parent_episode_id,
+          timestamp: timestamp
+        )
+      end
+
+      def restore_episodes(serialized_episodes)
+        return unless episodic
+
+        episodic.restore(serialized_episodes)
       end
 
       private
@@ -93,6 +114,22 @@ module Spurline
         return if content_text.strip.empty?
 
         long_term.store(content: content_text, metadata: { turn_number: turn.number })
+      end
+
+      def build_episodic_store(config)
+        enabled = case config
+                  when nil
+                    true
+                  when true, false
+                    config
+                  when Hash
+                    config.fetch(:enabled, true)
+                  else
+                    !!config
+                  end
+
+        episodes = config.is_a?(Hash) ? config.fetch(:episodes, []) : []
+        EpisodicStore.new(enabled: enabled, episodes: episodes)
       end
 
       def extract_text(value)

@@ -13,6 +13,10 @@ module Spurline
       Configuration.config
     end
 
+    def analyze_repo(path)
+      Cartographer::Runner.new.analyze(repo_path: path)
+    end
+
     def credentials
       @credentials ||= CLI::Credentials.new(project_root: Dir.pwd).read
     end
@@ -27,6 +31,7 @@ module Spurline
         loader.inflector.inflect("dsl" => "DSL")
         loader.inflector.inflect("pii_filter" => "PIIFilter")
         loader.inflector.inflect("cli" => "CLI")
+        loader.inflector.inflect("ci_config" => "CIConfig")
         loader.inflector.inflect("sqlite" => "SQLite")
         loader.inflector.inflect("open_ai" => "OpenAI")
         loader.ignore("#{__dir__}/spurline/errors.rb")

@@ -23,11 +23,16 @@ Read these sequentially to build understanding, or jump to any guide for a speci
 
 - [Security](07_security.md) — Trust levels, injection defense, data fencing
 - [Sessions and Memory](08_sessions_and_memory.md) — Conversation state and history
+- [Episodic Memory](14_episodic_memory.md) — Structured session traces for replay and explainability
 
 ## Operations
 
 - [Testing](09_testing.md) — Test agents without live API calls
 - [Configuration](12_configuration.md) — Global settings and the audit log
+
+## Analysis
+
+- [Cartographer](13_cartographer.md) — Repository analysis and `RepoProfile` generation
 
 ## Advanced
 

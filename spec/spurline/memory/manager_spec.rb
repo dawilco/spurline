@@ -123,6 +123,41 @@ RSpec.describe Spurline::Memory::Manager do
     end
   end
 
+  describe "episodic memory" do
+    it "enables episodic memory by default" do
+      manager = described_class.new
+      episode = manager.record_episode(type: :user_message, content: "hello", turn_number: 1)
+
+      expect(episode).to be_a(Spurline::Memory::Episode)
+      expect(manager.episodic.count).to eq(1)
+    end
+
+    it "supports disabling episodic memory via config" do
+      manager = described_class.new(config: { episodic: false })
+      episode = manager.record_episode(type: :user_message, content: "hello", turn_number: 1)
+
+      expect(episode).to be_nil
+      expect(manager.episodic.enabled).to be false
+    end
+
+    it "restores serialized episodes" do
+      manager = described_class.new
+      manager.restore_episodes([
+        {
+          id: "ep-1",
+          type: :decision,
+          content: "invoke tool",
+          metadata: { decision: "invoke_tool" },
+          turn_number: 2,
+          timestamp: Time.utc(2026, 2, 22, 12, 0, 0),
+        },
+      ])
+
+      expect(manager.episodic.count).to eq(1)
+      expect(manager.episodic.decisions.first.id).to eq("ep-1")
+    end
+  end
+
   describe "long-term adapter config validation" do
     it "raises for unknown adapters" do
       expect {

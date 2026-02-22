@@ -1,0 +1,21 @@
+{
+  "name": "node-express-fixture",
+  "private": true,
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "dependencies": {
+    "express": "4.18.2"
+  },
+  "devDependencies": {
+    "jest": "29.7.0",
+    "eslint": "8.57.0",
+    "prettier": "3.2.5"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest --runInBand",
+    "lint": "eslint .",
+    "deploy": "echo deploy"
+  }
+}

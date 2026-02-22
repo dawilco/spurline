@@ -257,6 +257,43 @@ RSpec.describe Spurline::Agent do
     end
   end
 
+  describe "episodic trace" do
+    it "records tool calls, decisions, external data, and user messages" do
+      agent = agent_class.new
+      agent.use_stub_adapter(responses: [
+        stub_tool_call(:echo, message: "test"),
+        stub_text("Done"),
+      ])
+
+      agent.run("Echo something") { |_| }
+
+      expect(agent.episodes.user_messages.length).to eq(1)
+      expect(agent.episodes.decisions.length).to be >= 2
+      expect(agent.episodes.tool_calls.length).to eq(1)
+      expect(agent.episodes.external_data.length).to eq(1)
+      expect(agent.explain).to include("Tool call echo")
+    end
+
+    it "restores episodic history when resuming a session" do
+      store = Spurline::Session::Store::Memory.new
+      klass = agent_class
+      original_store = klass.session_store
+      klass.session_store = store
+
+      session_id = "episodic-session-1"
+      first = klass.new(session_id: session_id)
+      first.use_stub_adapter(responses: [stub_text("First response")])
+      first.run("First input") { |_| }
+
+      resumed = klass.new(session_id: session_id)
+
+      expect(resumed.episodes.count).to be >= 2
+      expect(resumed.explain).to include("Turn 1")
+    ensure
+      klass.session_store = original_store if klass && original_store
+    end
+  end
+
   describe "#run with security pipeline" do
     it "raises InjectionAttemptError for injection in user input" do
       agent = agent_class.new

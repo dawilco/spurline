@@ -62,7 +62,13 @@ module Spurline
           ENV.fetch("OPENAI_API_KEY", nil),
           Spurline.credentials["openai_api_key"],
         ]
-        candidates.find { |value| present_string?(value) }
+        key = candidates.find { |value| present_string?(value) }
+        return key if key
+
+        raise Spurline::ConfigurationError,
+          "Missing OpenAI API key for adapter :openai. " \
+          "Set OPENAI_API_KEY, add openai_api_key to Spurline.credentials, " \
+          "or pass api_key:."
       end
 
       def present_string?(value)
@@ -75,6 +81,10 @@ module Spurline
       def build_client
         require "openai"
         ::OpenAI::Client.new(access_token: @api_key)
+      rescue LoadError
+        raise Spurline::ConfigurationError,
+          "The 'ruby-openai' gem is required for adapter :openai. " \
+          "Add `gem \"ruby-openai\"` to your Gemfile."
       end
 
       # OpenAI expects the system prompt as a message in the message array.

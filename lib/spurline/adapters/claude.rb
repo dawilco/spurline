@@ -56,7 +56,13 @@ module Spurline
           ENV.fetch("ANTHROPIC_API_KEY", nil),
           Spurline.credentials["anthropic_api_key"],
         ]
-        candidates.find { |value| present_string?(value) }
+        key = candidates.find { |value| present_string?(value) }
+        return key if key
+
+        raise Spurline::ConfigurationError,
+          "Missing Anthropic API key for adapter :claude. " \
+          "Set ANTHROPIC_API_KEY, add anthropic_api_key to Spurline.credentials, " \
+          "or pass api_key:."
       end
 
       def present_string?(value)
@@ -68,12 +74,11 @@ module Spurline
 
       def build_client
         require "anthropic"
-
-        if @api_key
-          Anthropic::Client.new(api_key: @api_key)
-        else
-          Anthropic::Client.new
-        end
+        Anthropic::Client.new(api_key: @api_key)
+      rescue LoadError
+        raise Spurline::ConfigurationError,
+          "The 'anthropic' gem is required for adapter :claude. " \
+          "Add `gem \"anthropic\"` to your Gemfile."
       end
 
       def format_messages(messages)

@@ -85,6 +85,16 @@ module Spurline
       @adapter = Adapters::StubAdapter.new(responses: responses)
     end
 
+    # Structured per-session event trace.
+    def episodes
+      @memory.episodic
+    end
+
+    # Human-readable narrative of the episodic trace.
+    def explain
+      episodes.explain
+    end
+
     private
 
     def execute_run(input, &chunk_handler)
@@ -227,6 +237,7 @@ module Spurline
     end
 
     def restore_session_memory!
+      @memory.restore_episodes(@session.metadata[:episodes] || [])
       return unless @session.turns.any?(&:complete?)
 
       resumption = Session::Resumption.new(session: @session, memory: @memory)

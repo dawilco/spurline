@@ -1,0 +1,7 @@
+{
+  "name": "with-secrets-fixture",
+  "private": true,
+  "dependencies": {
+    "pymafka": "1.0.0"
+  }
+}

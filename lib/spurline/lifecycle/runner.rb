@@ -25,6 +25,16 @@ module Spurline
       def run(input:, session:, persona:, tools_schema:, adapter_config:, agent_context: nil, &chunk_handler)
         turn = session.start_turn(input: input)
         @audit.record(:turn_start, turn: turn.number)
+        parent_episode_id = record_episode(
+          session: session,
+          turn: turn,
+          type: :user_message,
+          content: input,
+          metadata: {
+            source: input.respond_to?(:source) ? input.source : "user:input",
+            trust: input.respond_to?(:trust) ? input.trust : :user,
+          }
+        )
 
         loop do
           @loop_count += 1
@@ -75,6 +85,36 @@ module Spurline
             tool_calls = buffer.tool_calls
 
             tool_calls.each do |tool_call|
+              filtered_args = Audit::SecretFilter.filter(
+                tool_call[:arguments],
+                tool_name: tool_call[:name],
+                registry: @tool_runner.registry
+              )
+              decision_episode_id = record_episode(
+                session: session,
+                turn: turn,
+                type: :decision,
+                content: "Model requested tool call",
+                metadata: {
+                  decision: "invoke_tool",
+                  tool_name: tool_call[:name],
+                  arguments: filtered_args,
+                  loop: @loop_count,
+                },
+                parent_episode_id: parent_episode_id
+              )
+              tool_episode_id = record_episode(
+                session: session,
+                turn: turn,
+                type: :tool_call,
+                content: filtered_args,
+                metadata: {
+                  tool_name: tool_call[:name],
+                  loop: @loop_count,
+                },
+                parent_episode_id: decision_episode_id || parent_episode_id
+              )
+
               # Check guardrails
               if session.tool_call_count >= @guardrails[:max_tool_calls]
                 @audit.record(:max_tool_calls_reached,
@@ -85,11 +125,6 @@ module Spurline
               end
 
               # Yield tool_start chunk
-              filtered_args = Audit::SecretFilter.filter(
-                tool_call[:arguments],
-                tool_name: tool_call[:name],
-                registry: @tool_runner.registry
-              )
               chunk_handler&.call(
                 Streaming::Chunk.new(
                   type: :tool_start,
@@ -127,6 +162,18 @@ module Spurline
                 loop: @loop_count,
                 result_length: result.text.to_s.length,
                 trust: result.trust)
+              parent_episode_id = record_episode(
+                session: session,
+                turn: turn,
+                type: :external_data,
+                content: result,
+                metadata: {
+                  source: "tool:#{tool_call[:name]}",
+                  trust: result.trust,
+                  loop: @loop_count,
+                },
+                parent_episode_id: tool_episode_id || decision_episode_id || parent_episode_id
+              ) || parent_episode_id
 
               # 6. Update input for next loop iteration with tool result
               input = result
@@ -139,6 +186,30 @@ module Spurline
             output_text = buffer.full_text
             output_content = Security::Gates::OperatorConfig.wrap(
               output_text, key: "llm_response"
+            )
+            decision_episode_id = record_episode(
+              session: session,
+              turn: turn,
+              type: :decision,
+              content: "Model returned final response",
+              metadata: {
+                decision: "final_response",
+                stop_reason: buffer.stop_reason,
+                loop: @loop_count,
+              },
+              parent_episode_id: parent_episode_id
+            )
+            record_episode(
+              session: session,
+              turn: turn,
+              type: :assistant_response,
+              content: output_content,
+              metadata: {
+                source: output_content.source,
+                trust: output_content.trust,
+                loop: @loop_count,
+              },
+              parent_episode_id: decision_episode_id || parent_episode_id
             )
 
             turn.finish!(output: output_content)
@@ -204,6 +275,31 @@ module Spurline
         return "assistant" if content.source == "config:llm_response"
 
         "user"
+      end
+
+      def record_episode(session:, turn:, type:, content:, metadata:, parent_episode_id: nil)
+        return nil unless @memory.respond_to?(:record_episode)
+
+        episode = @memory.record_episode(
+          type: type,
+          content: content,
+          metadata: metadata,
+          turn_number: turn.number,
+          parent_episode_id: parent_episode_id
+        )
+        return nil unless episode
+
+        persist_episode_state!(session)
+        episode.id
+      end
+
+      def persist_episode_state!(session)
+        return unless @memory.respond_to?(:episodic)
+
+        episodic = @memory.episodic
+        return unless episodic
+
+        session.metadata[:episodes] = episodic.serialize
       end
     end
   end

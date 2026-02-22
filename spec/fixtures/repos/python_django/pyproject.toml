@@ -1,0 +1,6 @@
+[project]
+name = "python-django-fixture"
+dependencies = [
+  "django>=5.0",
+  "pytest>=8.0"
+]

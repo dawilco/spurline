@@ -80,4 +80,10 @@ module Spurline
 
   # Raised when long-term memory persistence or retrieval fails.
   class LongTermMemoryError < AgentError; end
+
+  # Raised when Cartographer cannot access the target repository path.
+  class CartographerAccessError < AgentError; end
+
+  # Raised when an individual analyzer fails to produce valid output.
+  class AnalyzerError < AgentError; end
 end

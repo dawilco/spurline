@@ -15,5 +15,8 @@ module Spurline
     setting :audit_max_entries, default: nil
     setting :permissions_file, default: "config/permissions.yml"
     setting :brave_api_key, default: nil
+    setting :cartographer_exclude_patterns, default: %w[
+      .git node_modules vendor tmp log coverage
+    ]
   end
 end

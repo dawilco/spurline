@@ -41,8 +41,17 @@ RSpec.describe Spurline::Adapters::OpenAI do
     it "treats blank encrypted credentials as missing" do
       allow(Spurline).to receive(:credentials).and_return("openai_api_key" => "")
 
-      adapter = described_class.new
-      expect(adapter.instance_variable_get(:@api_key)).to be_nil
+      expect {
+        described_class.new
+      }.to raise_error(Spurline::ConfigurationError, /Missing OpenAI API key/)
+    end
+
+    it "raises when no API key can be resolved" do
+      allow(Spurline).to receive(:credentials).and_return({})
+
+      expect {
+        described_class.new
+      }.to raise_error(Spurline::ConfigurationError, /Missing OpenAI API key/)
     end
   end
 
@@ -53,6 +62,17 @@ RSpec.describe Spurline::Adapters::OpenAI do
 
     it "has default max tokens" do
       expect(described_class::DEFAULT_MAX_TOKENS).to be_a(Integer)
+    end
+  end
+
+  describe "#build_client" do
+    it "raises ConfigurationError with guidance when ruby-openai is unavailable" do
+      adapter = described_class.new(api_key: "test-key")
+      allow(adapter).to receive(:require).with("openai").and_raise(LoadError)
+
+      expect {
+        adapter.send(:build_client)
+      }.to raise_error(Spurline::ConfigurationError, /ruby-openai/)
     end
   end
 

@@ -109,7 +109,7 @@ Status: implemented (tracer bullet).
 - `Memory::Embedder::Base` with `Memory::Embedder::OpenAI`
 - `memory :long_term, adapter: :postgres, embedding_model: :openai` DSL now wires through manager + context assembly
 
-### 1.3 — Episodic Memory
+### 1.3 — Episodic Memory — **Complete**
 
 Structured event trace separate from short-term context. Per-session record of: tool calls, decisions, external data received, user messages. The foundation for session replay and the "explain what the agent did" capability.
 
@@ -155,7 +155,7 @@ end
 
 **Outcome:** Agents can do work that spans multiple processes, multiple channels, and multiple sub-agents. This is the threshold between "framework that works in demos" and "framework that works for real autonomous tasks."
 
-### 2.1 — Cartographer
+### 2.1 — Cartographer — **Complete**
 
 **The first first-class Spurline component.** Pure analysis — reads, infers, never executes. Produces a versioned, serializable `RepoProfile`.
 
@@ -257,9 +257,21 @@ agent.run(ticket, scope: {
 
 Inside the scope, tools that accept repository or branch parameters are automatically scoped. A `git_read` tool called without a branch argument defaults to the scoped branch. A `git_write` tool called with a branch outside the scope raises `ScopeViolationError`.
 
-### 2.4 — Multi-Agent Orchestration
+### 2.4 — Two-Tier Scale Architecture (ADR-005)
 
-An orchestrator agent that spawns sub-agents. The setuid rule: child agents inherit at most the parent's permissions, never more.
+The architecture for running hundreds of agents without serial dependencies. See ADR-005 for the full rationale and principles.
+
+This milestone introduces three new components and formalizes one existing pattern:
+
+**Task Envelope** — A `Data.define` struct that contains everything a worker needs and nothing more: task ID, natural language instruction, input files (scoped), constraints, acceptance criteria, and output spec. The context pipeline already delivers scoped content; the task envelope formalizes the contract for what a worker receives.
+
+**Workflow Ledger** — The authoritative record of a multi-task workflow. Tracks the plan (what tasks exist), status (pending/running/complete/failed), outputs (what each task produced), and the dependency graph (what must finish before what). The ledger lives outside all agents — no planner or worker owns it. Built on the same persistence adapters as the session store (SQLite, Postgres) but with its own schema. The relationship to suspended sessions: suspended sessions are the mechanism for parking and resuming individual agents; the ledger is the data model that coordinates across them.
+
+**Merge Queue** — A deterministic, non-agentic FIFO queue that integrates worker outputs. Workers produce patches/files/answers matching their envelope's `output_spec`. They do not apply their own outputs. The merge queue processes them sequentially. On conflict, it does not get clever — it flags the conflict and escalates to the planner. The less intelligent this component is, the more reliable the system is.
+
+**Judge** — An evaluation gate between worker output and the merge queue. Checks output against the task envelope's acceptance criteria. Returns accept, reject (with reason), or revise (with feedback). Rejected work goes back to the planner for re-decomposition or re-issuance — never back to the original worker. Workers never iterate on their own output.
+
+**Multi-agent spawn (existing design, reframed):** The `spawn_agent` pattern with setuid permission inheritance (child inherits at most parent permissions) is the mechanism the planner tier uses to create workers. This design is unchanged; the two-tier architecture gives it a clear role.
 
 ```ruby
 class OrchestratorAgent < ApplicationAgent
@@ -274,6 +286,14 @@ end
 ```
 
 `permissions: :inherit` is the only safe default. `:restrict` allows narrowing. `:expand` is not a valid option — it raises `PrivilegeEscalationError` at spawn time.
+
+**Dependencies:** Suspended sessions (2.2), scoped tool contexts (2.3), Cartographer (2.1) for repo-level task decomposition.
+
+**Design decisions deferred to implementation:**
+- Workflow Ledger schema (extends session store or separate table?)
+- Merge Queue conflict detection strategy (line-level diff, AST-level, or file-level?)
+- Judge implementation (separate agent, inline evaluation function, or pluggable?)
+- Task envelope versioning (does the envelope format need schema versioning like RepoProfile?)
 
 ### 2.5 — Idempotency Layer
 
@@ -406,6 +426,10 @@ These are architectural questions that need ADRs before implementation begins:
 | Suspension serialization format | Milestone 2.2 | May require session schema migration if 0.1 format is insufficient |
 | Event dispatch architecture (webhooks vs. message queue vs. Postgres NOTIFY vs. SQLite polling) | Milestone 2.2 | Infrastructure requirement for deployers; answer differs by store adapter |
 | Multi-channel identity (how agent knows which session an @mention belongs to) | Milestone 3.6 | Hard to change after channels are live |
+| Workflow Ledger schema (extends session store or separate table?) | Milestone 2.4 | Determines persistence strategy for multi-agent workflows |
+| Merge Queue conflict detection strategy (line-level, AST-level, or file-level?) | Milestone 2.4 | Determines quality ceiling for parallel code modification |
+| Judge implementation (separate agent, inline function, or pluggable?) | Milestone 2.4 | Affects latency and cost of the evaluation gate |
+| Task envelope versioning (schema versioned like RepoProfile?) | Milestone 2.4 | Determines forward compatibility for planner/worker protocol |
 
 ---
 

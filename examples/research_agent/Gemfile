@@ -1,0 +1,4 @@
+source "https://rubygems.org"
+
+gem "spurline-core", path: "../.."
+gem "spurline-web-search", path: "../../spurs/spurline-web-search"

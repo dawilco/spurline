@@ -28,6 +28,7 @@ module Spurline
             JSON.generate(metadata),
           ]
 
+          # ASYNC-READY: Database writes are synchronous in v1 at this boundary.
           connection.exec_params(sql, params)
         rescue StandardError => e
           raise Spurline::LongTermMemoryError, "Failed storing long-term memory: #{e.message}"
@@ -42,6 +43,7 @@ module Spurline
             LIMIT $2
           SQL
           params = [vector_literal(query_embedding), limit]
+          # ASYNC-READY: Database reads are synchronous in v1 at this boundary.
           result = connection.exec_params(sql, params)
 
           result.map do |row|

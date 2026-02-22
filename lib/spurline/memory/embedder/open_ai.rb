@@ -13,6 +13,7 @@ module Spurline
         end
 
         def embed(text)
+          # ASYNC-READY: Embedding requests are blocking in v1 and run at this seam.
           response = build_client.embeddings(parameters: { model: @model, input: text.to_s })
           embedding = response.dig("data", 0, "embedding")
 

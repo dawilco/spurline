@@ -15,6 +15,16 @@ module Spurline
           @memory_config[type.to_sym] = options
         end
 
+        # Shorthand for toggling episodic memory recording.
+        #
+        #   episodic false
+        #   episodic true
+        #
+        def episodic(enabled = true)
+          @memory_config ||= {}
+          @memory_config[:episodic] = { enabled: !!enabled }
+        end
+
         def memory_config
           own = @memory_config || {}
           if superclass.respond_to?(:memory_config)

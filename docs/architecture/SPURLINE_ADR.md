@@ -142,6 +142,50 @@ spurline_sessions
 
 ---
 
+## ADR-005 — Two-Tier Scale Architecture (Planner/Worker)
+
+**Decision:** Spurline's multi-agent orchestration at scale follows a strict two-tier model: planners decompose work into independent tasks, workers execute those tasks in isolation, judges evaluate results. Workers are blind — they do not know other workers exist, they have no access to shared state, and they do not handle output merging.
+
+**Rationale:** Most agent frameworks fail at scale because they treat agents like microservices — interconnected, state-sharing, aware of each other. This creates a fragile web where one stuck agent blocks everything. The fix is not better coordination; it is removing the need for coordination entirely.
+
+The two-tier model eliminates serial dependencies by construction. Adding the 101st worker is identical to adding the 2nd. Workers can fail, retry, or be replaced without cascading effects. The only serial path is plan → merge → plan. Everything between is parallel.
+
+This is not a team model. There is no collaboration between workers. The planner decomposes, workers execute, judges evaluate. That's it.
+
+**Core principles:**
+
+1. **Two tiers, not teams.** Planners and workers. No peer-to-peer agent communication.
+2. **Planner creates tasks, workers execute, judge evaluates results.** Clean separation of concerns across tiers.
+3. **Workers are blind.** Workers do not know other workers exist. Workers stay ignorant of the big picture. This is a feature, not a limitation.
+4. **Minimal viable context.** Workers get exactly what they need to do a task. No more. Do not confuse them. No shared state between workers.
+5. **Workers do not merge.** A dedicated deterministic system (the Merge Queue) handles output integration as a FIFO queue. Merge is not an agent concern.
+6. **Workflow state lives outside any agent's context.** The Workflow Ledger is the authoritative source of truth. No agent — planner or worker — owns the state.
+7. **Prompts matter more than coordination infrastructure.** A well-decomposed task with clear instructions will outperform a sophisticated coordination system with vague tasks every single time. The planner's ability to write good task envelopes is where 80% of quality comes from.
+
+**Key components introduced by this decision:**
+
+- **Task Envelope** — The self-contained unit of work a worker receives. Contains instruction, input files, constraints, acceptance criteria, and output spec. Maps to the existing context pipeline's scoped delivery.
+- **Workflow Ledger** — Durable data structure that tracks plan, task status, outputs, and dependency graph. Lives outside all agents. Built on top of suspended sessions infrastructure. This is the data model; suspended sessions are the mechanism.
+- **Merge Queue** — Deterministic, non-agentic FIFO system that integrates worker outputs. Detects conflicts and escalates to the planner. The less clever it is, the more reliable it is.
+- **Judge** — Evaluates worker output against task envelope acceptance criteria before output enters the merge queue. Rejected work returns to the planner, not the original worker.
+
+**Implications for implementation:**
+
+- The existing multi-agent orchestration design (ADR setuid rule, `spawn_agent`) remains valid but is now understood as the mechanism for the planner tier spawning workers
+- Scoped tool contexts (already planned) are the enforcement mechanism for worker isolation — each worker's scope is derived from its task envelope
+- The Workflow Ledger is a new component that extends the session store schema — it is not a session itself but uses the same persistence adapters
+- The Merge Queue is deliberately not an agent — it is deterministic Ruby code with no LLM involvement
+- Workers produce structured outputs (patches, files, answers) matching their envelope's `output_spec` — they do not apply their own outputs
+- The planner tier requires Cartographer to decompose repository work effectively
+
+**What this does NOT change:**
+
+- Single-agent workflows remain exactly as designed — this architecture is for scaling beyond one agent
+- The trust model, context pipeline, and permission system are unchanged — workers inherit scoped permissions from the planner per ADR-003/004
+- The spur contract is unchanged — spurs provide tools that workers use within their scoped contexts
+
+---
+
 ## Decision Summary
 
 | # | Question | Decision |
@@ -150,8 +194,9 @@ spurline_sessions
 | ADR-002 | Async | Sync-first, async-ready interfaces |
 | ADR-003 | Nested tools | Leaf nodes in v1, roadmap for later |
 | ADR-004 | Session storage | Framework owns it, adapter interface |
+| ADR-005 | Scale architecture | Two-tier planner/worker with blind workers, no shared state |
 
 ---
 
 *These decisions were made during initial architecture design, pre-v1.*
-*Next architectural decision points: Tool Registry design (Priority 2), Spur contract spec (Priority 3).*
+*ADR-005 was added February 2026 to formalize the scale architecture.*

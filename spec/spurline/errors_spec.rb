@@ -40,4 +40,24 @@ RSpec.describe Spurline do
       expect(Spurline::PostgresUnavailableError).to be < Spurline::AgentError
     end
   end
+
+  describe "CartographerAccessError" do
+    it "is defined" do
+      expect(defined?(Spurline::CartographerAccessError)).to eq("constant")
+    end
+
+    it "inherits from AgentError" do
+      expect(Spurline::CartographerAccessError).to be < Spurline::AgentError
+    end
+  end
+
+  describe "AnalyzerError" do
+    it "is defined" do
+      expect(defined?(Spurline::AnalyzerError)).to eq("constant")
+    end
+
+    it "inherits from AgentError" do
+      expect(Spurline::AnalyzerError).to be < Spurline::AgentError
+    end
+  end
 end
