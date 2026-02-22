@@ -74,4 +74,10 @@ module Spurline
 
   # Raised when a required tool secret cannot be resolved from any configured source.
   class SecretNotFoundError < AgentError; end
+
+  # Raised when an embedding provider or model fails to produce a valid vector.
+  class EmbedderError < AgentError; end
+
+  # Raised when long-term memory persistence or retrieval fails.
+  class LongTermMemoryError < AgentError; end
 end
