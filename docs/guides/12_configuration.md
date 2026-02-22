@@ -87,6 +87,19 @@ Built-in adapter aliases:
 - `:openai_gpt4o`, `:openai_gpt4o_mini`, `:openai_o3_mini`
 - `:stub`
 
+Spur-provided adapter aliases are available after requiring the spur gem. Example:
+
+```ruby
+require "spurline/local"
+# now :ollama is registered by spurline-local
+```
+
+Ollama/local adapters typically do not require an API key. `spurline-local` resolves host/port from:
+
+1. explicit `use_model` kwargs (`host:`, `port:`)
+2. `ENV["OLLAMA_HOST"]`, `ENV["OLLAMA_PORT"]`
+3. defaults `127.0.0.1:11434`
+
 You can reload credentials during a process with:
 
 ```ruby

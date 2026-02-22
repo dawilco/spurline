@@ -20,6 +20,7 @@ Recent hardening shipped:
 - structured replay audit events (`:llm_request`, `:llm_response`, `:tool_call`, `:tool_result`)
 - configurable in-memory audit retention (`audit_max_entries`)
 - stubbed integration coverage for guardrails, PII pipeline, SQLite round-trip/concurrency, memory overflow, streaming enumerator tool loops, and audit completeness
+- adapter spurs via `Spurline::Spur.adapters` (for example `spurline-local` registering `:ollama`)
 
 ## Requirements
 
@@ -84,6 +85,35 @@ Use these directly with `use_model`:
 - `:openai_gpt4o_mini`
 - `:openai_o3_mini`
 - `:stub`
+
+Adapter aliases can also come from spurs. For example, requiring `spurline/local` registers `:ollama`.
+
+## Local Inference (Ollama)
+
+`spurline-local` adds a local adapter backed by the Ollama HTTP API.
+
+```ruby
+require "spurline"
+require "spurline/local"
+
+class LocalAgent < Spurline::Agent
+  use_model :ollama, model: "llama3.2:latest"
+
+  persona(:default) do
+    system_prompt "You are a helpful local assistant."
+  end
+end
+```
+
+You can pass adapter kwargs directly through `use_model`:
+
+```ruby
+class RemoteOllamaAgent < Spurline::Agent
+  use_model :ollama, host: "10.0.0.1", port: 8080, model: "codellama:7b"
+end
+```
+
+`use_model` kwargs are forwarded to the adapter constructor.
 
 ## Core Concepts
 

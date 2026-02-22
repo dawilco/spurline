@@ -39,6 +39,8 @@ module Spurline
           register_default_adapters!(registry)
           registry
         end
+        Spurline::Spur.flush_pending_adapter_registrations!(@adapter_registry)
+        @adapter_registry
       end
 
       def session_store

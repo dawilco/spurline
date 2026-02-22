@@ -39,9 +39,20 @@ Selects the LLM adapter. Takes a symbol name and optional keyword arguments.
 ```ruby
 use_model :claude_sonnet
 use_model :claude_sonnet, max_tokens: 4096, temperature: 0.7
+use_model :ollama, host: "127.0.0.1", port: 11434, model: "llama3.2:latest"
 ```
 
-Stores `{ name: :claude_sonnet, max_tokens: 4096, temperature: 0.7 }` in `@model_config`. At instantiation, the agent resolves the adapter by looking up `config[:name]` in the adapter registry. There is no load-time validation -- invalid adapter names raise `AdapterNotFoundError` at instantiation.
+`:ollama` is provided by the `spurline-local` spur (require `spurline/local`).
+
+Stores `{ name: :claude_sonnet, max_tokens: 4096, temperature: 0.7 }` in `@model_config`. At instantiation, the agent resolves the adapter by looking up `config[:name]` in the adapter registry.
+
+Adapter construction behavior:
+
+1. If `config[:name]` maps to a built-in alias in `Base::DEFAULT_ADAPTERS`, its default `model:` is used.
+2. All `use_model` kwargs except `:name` are forwarded to the adapter constructor.
+3. Explicit `use_model` kwargs override built-in defaults (including `model:`).
+
+There is no load-time validation -- invalid adapter names raise `AdapterNotFoundError` at instantiation.
 
 **Inheritance:** child overrides entirely, or inherits if not set. Access via `MyAgent.model_config`.
 

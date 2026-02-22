@@ -36,7 +36,12 @@ module Spurline
         @pending_registrations ||= []
       end
 
-      # Replay deferred registrations into the given tool registry.
+      # Adapter registrations deferred because Agent wasn't loaded yet.
+      def pending_adapter_registrations
+        @pending_adapter_registrations ||= []
+      end
+
+      # Replay deferred tool registrations into the given tool registry.
       def flush_pending_registrations!(registry)
         return if pending_registrations.empty?
 
@@ -44,6 +49,16 @@ module Spurline
           registry.register(registration[:name], registration[:tool_class])
         end
         pending_registrations.clear
+      end
+
+      # Replay deferred adapter registrations into the given adapter registry.
+      def flush_pending_adapter_registrations!(registry)
+        return if pending_adapter_registrations.empty?
+
+        pending_adapter_registrations.each do |registration|
+          registry.register(registration[:name], registration[:adapter_class])
+        end
+        pending_adapter_registrations.clear
       end
 
       # Called by subclasses to set the spur gem name.
@@ -64,6 +79,17 @@ module Spurline
           @tool_registrations = context.registrations
         end
         @tool_registrations
+      end
+
+      # DSL block for registering adapters.
+      def adapters(&block)
+        @adapter_registrations ||= []
+        if block
+          context = AdapterRegistrationContext.new
+          context.instance_eval(&block)
+          @adapter_registrations = context.registrations
+        end
+        @adapter_registrations
       end
 
       # DSL block for declaring default permissions.
@@ -91,16 +117,23 @@ module Spurline
 
       private
 
-      # Auto-registers this spur's tools into the global Spurline::Agent registry.
-      # If Agent hasn't been loaded yet (Zeitwerk lazy loading), the registrations
-      # are deferred and replayed when Agent.tool_registry is first accessed.
+      # Auto-registers this spur's tools and adapters into the global
+      # Spurline::Agent registries. If Agent hasn't been loaded yet (Zeitwerk
+      # lazy loading), the registrations are deferred and replayed when the
+      # respective registry is first accessed.
       def auto_register!
-        return if tools.empty?
-
         Spur.registry[spur_name] = {
           tools: tools.map { |r| r[:name] },
+          adapters: adapters.map { |r| r[:name] },
           permissions: permissions,
         }
+
+        register_tools!
+        register_adapters!
+      end
+
+      def register_tools!
+        return if tools.empty?
 
         if defined?(Spurline::Agent) && Spurline::Agent.respond_to?(:tool_registry)
           tools.each do |registration|
@@ -111,6 +144,21 @@ module Spurline
           end
         else
           Spur.pending_registrations.concat(tools)
+        end
+      end
+
+      def register_adapters!
+        return if adapters.empty?
+
+        if defined?(Spurline::Agent) && Spurline::Agent.respond_to?(:adapter_registry)
+          adapters.each do |registration|
+            Spurline::Agent.adapter_registry.register(
+              registration[:name],
+              registration[:adapter_class]
+            )
+          end
+        else
+          Spur.pending_adapter_registrations.concat(adapters)
         end
       end
     end
@@ -125,6 +173,19 @@ module Spurline
 
       def register(name, tool_class)
         @registrations << { name: name.to_sym, tool_class: tool_class }
+      end
+    end
+
+    # Context object for the `adapters` DSL block.
+    class AdapterRegistrationContext
+      attr_reader :registrations
+
+      def initialize
+        @registrations = []
+      end
+
+      def register(name, adapter_class)
+        @registrations << { name: name.to_sym, adapter_class: adapter_class }
       end
     end
 

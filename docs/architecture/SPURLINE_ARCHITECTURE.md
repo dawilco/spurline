@@ -126,6 +126,20 @@ module SpurlineWeb
 end
 ```
 
+Adapter spurs use the same contract:
+
+```ruby
+module Spurline
+  module Local
+    class Spur < Spurline::Spur
+      adapters do
+        register :ollama, Spurline::Local::Adapters::Ollama
+      end
+    end
+  end
+end
+```
+
 ---
 
 ## Security Architecture

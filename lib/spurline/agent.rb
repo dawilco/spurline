@@ -224,13 +224,17 @@ module Spurline
         adapter_class = self.class.adapter_registry.resolve(config[:name])
         return adapter_class unless adapter_class.is_a?(Class)
 
-        # Pass model name from DEFAULT_ADAPTERS if available
+        # Build adapter kwargs from DEFAULT_ADAPTERS defaults + use_model kwargs.
+        # use_model kwargs (host:, port:, model:, options:, etc.) take precedence.
+        adapter_kwargs = {}
         defaults = Base::DEFAULT_ADAPTERS[config[:name]]
-        if defaults && defaults[:model]
-          adapter_class.new(model: defaults[:model])
-        else
-          adapter_class.new
-        end
+        adapter_kwargs[:model] = defaults[:model] if defaults && defaults[:model]
+
+        # Forward all use_model kwargs except :name (which is the adapter selector)
+        user_kwargs = config.except(:name)
+        adapter_kwargs.merge!(user_kwargs)
+
+        adapter_kwargs.empty? ? adapter_class.new : adapter_class.new(**adapter_kwargs)
       rescue Spurline::AdapterNotFoundError
         # Adapter not yet registered — allows use_stub_adapter to set it later.
         nil

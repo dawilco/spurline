@@ -598,6 +598,67 @@ RSpec.describe Spurline::Agent do
     end
   end
 
+  describe "adapter resolution" do
+    let(:adapter_class) do
+      Class.new(Spurline::Adapters::Base) do
+        attr_reader :init_kwargs
+
+        def initialize(**kwargs)
+          @init_kwargs = kwargs
+        end
+
+        def stream(messages:, system:, tools:, config:, scheduler:, &chunk_handler); end
+      end
+    end
+
+    it "forwards use_model kwargs to adapter constructor" do
+      klass = Class.new(described_class) do
+        use_model :custom_local, host: "10.0.0.1", port: 8080, model: "codellama:7b", options: { temperature: 0.2 }
+      end
+      klass.adapter_registry.register(:custom_local, adapter_class)
+
+      agent = klass.new
+      adapter = agent.instance_variable_get(:@adapter)
+
+      expect(adapter).to be_a(adapter_class)
+      expect(adapter.init_kwargs).to include(
+        host: "10.0.0.1",
+        port: 8080,
+        model: "codellama:7b",
+        options: { temperature: 0.2 }
+      )
+    end
+
+    it "merges default model from DEFAULT_ADAPTERS when use_model does not provide one" do
+      klass = Class.new(described_class) do
+        use_model :claude_sonnet, host: "127.0.0.1"
+      end
+      klass.adapter_registry.register(:claude_sonnet, adapter_class)
+
+      agent = klass.new
+      adapter = agent.instance_variable_get(:@adapter)
+
+      expect(adapter).to be_a(adapter_class)
+      expect(adapter.init_kwargs).to include(
+        model: Spurline::Base::DEFAULT_ADAPTERS[:claude_sonnet][:model],
+        host: "127.0.0.1"
+      )
+    end
+
+    it "lets explicit use_model model override DEFAULT_ADAPTERS model" do
+      klass = Class.new(described_class) do
+        use_model :claude_sonnet, model: "custom-claude-model"
+      end
+      klass.adapter_registry.register(:claude_sonnet, adapter_class)
+
+      agent = klass.new
+      adapter = agent.instance_variable_get(:@adapter)
+
+      expect(adapter).to be_a(adapter_class)
+      expect(adapter.init_kwargs[:model]).to eq("custom-claude-model")
+    end
+  end
+
   describe "DSL inheritance" do
     it "inherits tools from parent class" do
       parent = agent_class
