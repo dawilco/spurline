@@ -122,7 +122,7 @@ Generators include usable scaffolds with validation-ready project structure (`co
 
 ### Testing Surface — **Built**
 
-- 846 examples passing (0 failures, 4 pending for Postgres-availability scenarios)
+- 931 examples passing (0 failures, 4 pending for Postgres-availability scenarios)
 - Full stubbed lifecycle integration coverage now includes 8 focused integration specs across guardrails, streaming, memory, session persistence/concurrency, and audit completeness
 - `Spurline::Testing` now includes:
   - `stub_text`
@@ -197,7 +197,7 @@ Integration wiring into Runner is complete — idempotent tools check cache befo
 
 ---
 
-## Milestone 3 (Agentic Development Platform — Complete, 846 specs)
+## Milestone 3 (Agentic Development Platform — Complete)
 
 ### spurline-test (M3.1) — **Built**
 
@@ -221,19 +221,43 @@ Ollama adapter for local LLM inference via HTTP API. `Adapters::Ollama` streams 
 
 ---
 
+## Milestone 4 (Composition & Observability — Complete, 931 specs)
+
+### Deterministic Agents (M4.1) — **Built**
+
+`Lifecycle::DeterministicRunner` executes fixed tool sequences without LLM calls. Agent accepts `mode: :deterministic` and `tool_sequence:` params. DSL: `deterministic_sequence :detect, :run, :parse`. Tool results chain via accumulator hash. Supports static args, dynamic args (lambdas), and default passthrough. Same observability as LLM mode (sessions, audit, hooks).
+
+### spawn_agent (M4.2) — **Built**
+
+`Agent#spawn_agent(agent_class, input:, permissions:, scope:, &block)` creates child agents with permission-safe inheritance. `Orchestration::AgentSpawner` enforces setuid rule via `PermissionIntersection.compute` — child can never exceed parent permissions. Child inherits scope (can narrow, never widen). Parent session ID tracked in child metadata for audit correlation. Hooks: `on_child_spawn`, `on_child_complete`, `on_child_error`.
+
+### Dashboard P1 (M4.3) — **Built**
+
+`spurline-dashboard` gem at `spurs/spurline-dashboard/`. Sinatra-based, server-rendered ERB. Routes: `/sessions` (list with state/agent_class filters, pagination), `/sessions/:id` (turn detail with tool calls), `/agents` (registered classes with config), `/tools` (spur registry). Read-only. No JS build. No auth (host app responsibility).
+
+### Multi-Channel Tracer (M4.4) — **Built**
+
+ADR-006 written (Channel-Based Event Routing). `Channels::Event` immutable value object. `Channels::Base` abstract interface. `Channels::GitHub` handles issue_comment, PR review comment, PR review webhooks. `Channels::Router` dispatches payloads, resolves session affinity via `metadata[:channel_context]`, resumes suspended sessions. Trust: always `:external`. Designed for N channels, tracer implements GitHub only.
+
+---
+
 ## What Is Not Yet Built
 
-### Multi-Channel Presence — **Not designed**
+### Multi-Channel Expansion — **Tracer built, expansion not started**
 
-Cross-channel identity routing (Linear/GitHub/Teams/Slack/SIP) is not implemented.
+GitHub webhook channel is live (M4.4). Slack, Linear, Teams, email, SIP channels not implemented. The Channel/Router architecture is proven and extensible.
 
 ### Secret Management (Advanced Ops) — **Partial**
 
 Current three-tier model is implemented (credentials + tool declarations + runtime vault). Rotation workflows and broader freeform-result filtering still need design.
 
+### Dashboard P2+ — **Designed, not started**
+
+Trust Pipeline Inspector, Tool Log, Orchestration Viewer, Spur Registry phases documented in `SPURLINE_DASHBOARD.md`. P1 shipped.
+
 ---
 
-## Next Milestones
+## Completed Milestones
 
 - ~~M2.1 Cartographer~~ **Complete**
 - ~~M2.2 Suspended Sessions~~ **Complete**
@@ -245,7 +269,7 @@ Current three-tier model is implemented (credentials + tool declarations + runti
 - ~~M3.3 spurline-review~~ **Complete**
 - ~~M3.4 spurline-deploy~~ **Complete**
 - ~~M3.5 spurline-local~~ **Complete**
-- **M4.1 Skills as Deterministic Agents** — Agent "deterministic mode" for fixed tool sequences
-- **M4.2 spawn_agent** — Planner/worker orchestration hook (ADR-005)
-- **M4.3 Dashboard P1** — Session browser + agent overview (Rack-mountable gem)
-- **M4.4 Multi-Channel Tracer Bullet** — ADR-006 + GitHub webhook integration
+- ~~M4.1 Deterministic Agents~~ **Complete**
+- ~~M4.2 spawn_agent~~ **Complete**
+- ~~M4.3 Dashboard P1~~ **Complete**
+- ~~M4.4 Multi-Channel Tracer~~ **Complete**
