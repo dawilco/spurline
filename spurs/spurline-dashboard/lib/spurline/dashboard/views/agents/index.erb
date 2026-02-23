@@ -1,0 +1,32 @@
+<h2>Agents</h2>
+
+<% if @agents.empty? %>
+  <div class="empty-state">No agent classes loaded. Agent classes must be required before they appear here.</div>
+<% else %>
+  <% @agents.each do |agent| %>
+    <div class="agent-card">
+      <h3><%= escape_html(agent[:name]) %></h3>
+      <dl class="agent-detail">
+        <dt>Model</dt>
+        <dd><%= escape_html(agent[:model] ? agent[:model][:name].to_s : '--') %></dd>
+
+        <dt>Personas</dt>
+        <dd><%= agent[:personas].empty? ? '--' : agent[:personas].map { |p| escape_html(p) }.join(', ') %></dd>
+
+        <dt>Tools</dt>
+        <dd><%= agent[:tools].empty? ? '--' : agent[:tools].map { |t| escape_html(t) }.join(', ') %></dd>
+
+        <dt>Guardrails</dt>
+        <dd>
+          <% if agent[:guardrails].empty? %>
+            defaults
+          <% else %>
+            <% agent[:guardrails].each do |key, val| %>
+              <span><strong><%= escape_html(key) %>:</strong> <%= escape_html(val) %></span>&nbsp;
+            <% end %>
+          <% end %>
+        </dd>
+      </dl>
+    </div>
+  <% end %>
+<% end %>

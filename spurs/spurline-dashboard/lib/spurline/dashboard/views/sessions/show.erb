@@ -1,0 +1,71 @@
+<div class="session-header">
+  <h2>Session <%= short_id(@session.id) %></h2>
+  <div class="session-meta">
+    <span><strong>ID:</strong> <%= escape_html(@session.id) %></span>
+    <span><strong>Agent:</strong> <%= escape_html(@session.agent_class || '--') %></span>
+    <span><strong>State:</strong> <%= state_badge(@session.state) %></span>
+    <span><strong>User:</strong> <%= escape_html(@session.user || '--') %></span>
+    <span><strong>Turns:</strong> <%= @session.turn_count %></span>
+    <span><strong>Tool Calls:</strong> <%= @session.tool_call_count %></span>
+    <span><strong>Duration:</strong> <%= format_duration(@session.total_duration_ms) %></span>
+    <span><strong>Started:</strong> <%= @session.started_at&.strftime('%Y-%m-%d %H:%M:%S') || '--' %></span>
+    <span><strong>Finished:</strong> <%= @session.finished_at&.strftime('%Y-%m-%d %H:%M:%S') || '--' %></span>
+  </div>
+</div>
+
+<% if @session.turns.empty? %>
+  <div class="empty-state">No turns recorded for this session.</div>
+<% else %>
+  <% @session.turns.each do |turn| %>
+    <div class="turn-card">
+      <div class="turn-header">
+        <span>
+          <strong>Turn <%= turn.number %></strong>
+          &nbsp;&mdash;&nbsp;
+          <%= format_duration(turn.duration_ms) %>
+          &nbsp;|&nbsp;
+          <%= turn.tool_call_count %> tool call<%= turn.tool_call_count == 1 ? '' : 's' %>
+          <% if turn.complete? %>
+            &nbsp;&#10003;
+          <% end %>
+        </span>
+        <span style="color:#9ca3af;font-size:12px"><%= turn.started_at&.strftime('%H:%M:%S') %></span>
+      </div>
+      <div class="turn-body">
+        <div class="turn-section">
+          <h4>Input</h4>
+          <div class="turn-content"><%= escape_html(extract_text(turn.input)) %></div>
+        </div>
+
+        <% unless turn.tool_calls.empty? %>
+          <div class="turn-section">
+            <h4>Tool Calls</h4>
+            <% turn.tool_calls.each do |tc| %>
+              <div class="tool-call">
+                <span class="tool-name"><%= escape_html(tc[:name]) %></span>
+                <span class="tool-duration"><%= format_duration(tc[:duration_ms]) %></span>
+                <% if tc[:was_cached] %>
+                  <span class="badge" style="background:#6b7280">cached</span>
+                <% end %>
+                <details style="margin-top:6px">
+                  <summary style="cursor:pointer;font-size:12px;color:#6b7280">Arguments &amp; Result</summary>
+                  <div class="turn-content" style="margin-top:6px"><%= escape_html(format_json(tc[:arguments])) %></div>
+                  <div class="turn-content" style="margin-top:6px"><%= escape_html(truncate_text(tc[:result].to_s, length: 500)) %></div>
+                </details>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <% if turn.output %>
+          <div class="turn-section">
+            <h4>Output</h4>
+            <div class="turn-content"><%= escape_html(extract_text(turn.output)) %></div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<p style="margin-top:16px"><a href="<%= url('/sessions') %>">&larr; Back to sessions</a></p>
