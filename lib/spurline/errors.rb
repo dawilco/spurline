@@ -98,4 +98,8 @@ module Spurline
   class LedgerError < AgentError; end
   class TaskEnvelopeError < AgentError; end
   class MergeConflictError < AgentError; end
+
+  # Raised when a spawned child agent fails during execution.
+  # The message includes parent/child session IDs for audit correlation.
+  class SpawnError < AgentError; end
 end
