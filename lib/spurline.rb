@@ -34,6 +34,7 @@ module Spurline
         loader.inflector.inflect("ci_config" => "CIConfig")
         loader.inflector.inflect("sqlite" => "SQLite")
         loader.inflector.inflect("open_ai" => "OpenAI")
+        loader.inflector.inflect("github" => "GitHub")
         loader.ignore("#{__dir__}/spurline/errors.rb")
         loader
       end

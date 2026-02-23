@@ -40,6 +40,7 @@ Read these sequentially to build understanding, or jump to any guide for a speci
 - [Idempotency](16_idempotency.md) — Prevent duplicate side effects from tool retries
 - [Scoped Tool Contexts](17_scoped_contexts.md) — Constrain tool access by branch, PR, or repo
 - [Multi-Agent Orchestration](18_multi_agent.md) — Two-tier scale architecture with TaskEnvelope, Ledger, Judge, and MergeQueue
+- [Channels](26_channels.md) — Route external events (for example GitHub webhooks) to suspended sessions
 
 ## Bundled Spurs
 

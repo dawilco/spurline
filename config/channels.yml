@@ -1,0 +1,22 @@
+# Default channel configuration for Spurline.
+# Channels are transport-agnostic event adapters that route external
+# events to suspended sessions.
+#
+# This file documents available channels. Channel instances are created
+# programmatically -- this file is a reference, not loaded at runtime.
+
+channels:
+  github:
+    description: "GitHub webhook events (PR comments, reviews)"
+    supported_events:
+      - issue_comment
+      - pull_request_review_comment
+      - pull_request_review
+    default_trust: external
+    session_affinity:
+      metadata_key: channel_context
+      identifier_format: "owner/repo#pr_number"
+    webhook_events_to_subscribe:
+      - issue_comment
+      - pull_request_review_comment
+      - pull_request_review
