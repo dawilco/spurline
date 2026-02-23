@@ -1,0 +1,53 @@
+<h2>Sessions</h2>
+
+<form class="filter-bar" method="get" action="<%= url('/sessions') %>">
+  <select name="state">
+    <option value="">All states</option>
+    <% @states.each do |s| %>
+      <option value="<%= escape_html(s) %>" <%= 'selected' if @current_state == s.to_s %>><%= escape_html(s) %></option>
+    <% end %>
+  </select>
+
+  <select name="agent_class">
+    <option value="">All agents</option>
+    <% @agent_classes.each do |ac| %>
+      <option value="<%= escape_html(ac) %>" <%= 'selected' if @current_agent_class == ac %>><%= escape_html(ac) %></option>
+    <% end %>
+  </select>
+
+  <button type="submit">Filter</button>
+  <a href="<%= url('/sessions') %>" class="clear">Clear</a>
+</form>
+
+<% if @sessions.empty? %>
+  <div class="empty-state">No sessions found.</div>
+<% else %>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Agent</th>
+        <th>State</th>
+        <th>Turns</th>
+        <th>Tool Calls</th>
+        <th>Duration</th>
+        <th>Started</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @sessions.each do |session| %>
+        <tr>
+          <td><a href="<%= url("/sessions/#{escape_html(session.id)}") %>"><%= short_id(session.id) %></a></td>
+          <td><%= escape_html(session.agent_class || '--') %></td>
+          <td><%= state_badge(session.state) %></td>
+          <td><%= session.turn_count %></td>
+          <td><%= session.tool_call_count %></td>
+          <td><%= format_duration(session.total_duration_ms) %></td>
+          <td><%= time_ago(session.started_at) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <%= pagination_nav(@pagination, base_path: url('/sessions'), params: { 'state' => @current_state, 'agent_class' => @current_agent_class }) %>
+<% end %>
