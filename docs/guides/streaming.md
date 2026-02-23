@@ -4,7 +4,7 @@ Spurline is streaming-first. `#run` and `#chat` always stream -- there is no non
 
 This guide covers the chunk types, consumption patterns, and practical recipes for common streaming scenarios.
 
-**Prerequisites:** You should be familiar with the [Agent DSL](02_agent_dsl.md) and [Agent Lifecycle](03_agent_lifecycle.md).
+**Prerequisites:** You should be familiar with the [Agent DSL](../reference/agent_dsl.md) and [Agent Lifecycle](agent_lifecycle.md).
 
 ---
 
@@ -210,6 +210,6 @@ The `Buffer` is used internally by the lifecycle runner. It collects chunks, tra
 
 ## Next Steps
 
-- [Building Tools](05_building_tools.md) -- create tools that appear as `:tool_start`/`:tool_end` in the stream
-- [Sessions and Memory](08_sessions_and_memory.md) -- how streaming integrates with session persistence
-- [Testing](09_testing.md) -- patterns for testing streaming output with the stub adapter
+- [Building Tools](building_tools.md) -- create tools that appear as `:tool_start`/`:tool_end` in the stream
+- [Sessions and Memory](sessions_and_memory.md) -- how streaming integrates with session persistence
+- [Testing](testing.md) -- patterns for testing streaming output with the stub adapter

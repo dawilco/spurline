@@ -4,7 +4,7 @@ Scopes define explicit resource boundaries for tool execution. A scope says: "th
 
 This guide introduces `Spurline::Tools::Scope` as the value object used to model those boundaries.
 
-**Prerequisites:** [Building Tools](05_building_tools.md), [Tool Permissions](06_tool_permissions.md), and [Security](07_security.md).
+**Prerequisites:** [Building Tools](building_tools.md), [Tool Permissions](tool_permissions.md), and [Security](security.md).
 
 ---
 

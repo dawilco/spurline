@@ -2,7 +2,7 @@
 
 Spurs are standard Ruby gems that package capabilities for distribution. A spur can register tools, adapters, or both. When a spur gem is required, those capabilities self-register into the Spurline framework. This is how the ecosystem extends: one gem, one `require`, and new capabilities appear in every agent that needs them.
 
-**Prerequisites:** You should be comfortable [building tools](05_building_tools.md) and understand [tool permissions](06_tool_permissions.md).
+**Prerequisites:** You should be comfortable [building tools](building_tools.md) and understand [tool permissions](tool_permissions.md).
 
 Bundled reference spurs in this repository:
 
@@ -306,6 +306,6 @@ Before publishing a spur gem:
 
 ## Next Steps
 
-- [Building Tools](05_building_tools.md) -- the tool contract that spur gems must follow
-- [Tool Permissions](06_tool_permissions.md) -- how permissions cascade from spur defaults to project overrides
-- [CLI Reference](11_cli_reference.md) -- generating projects and scaffolding tools
+- [Building Tools](building_tools.md) -- the tool contract that spur gems must follow
+- [Tool Permissions](tool_permissions.md) -- how permissions cascade from spur defaults to project overrides
+- [CLI Reference](../reference/cli.md) -- generating projects and scaffolding tools

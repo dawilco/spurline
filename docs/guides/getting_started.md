@@ -221,7 +221,7 @@ class Calculator < Spurline::Tools::Base
 end
 ```
 
-Every tool inherits from `Spurline::Tools::Base` and declares `tool_name`, `description`, and `parameters` (JSON Schema). The `#call` method receives keyword arguments and returns a string. That string is automatically wrapped with trust level `:external` and XML-fenced when it reaches the LLM. Tools are leaf nodes -- they cannot invoke other tools. See [Building Tools](05_building_tools.md) for the full contract.
+Every tool inherits from `Spurline::Tools::Base` and declares `tool_name`, `description`, and `parameters` (JSON Schema). The `#call` method receives keyword arguments and returns a string. That string is automatically wrapped with trust level `:external` and XML-fenced when it reaches the LLM. Tools are leaf nodes -- they cannot invoke other tools. See [Building Tools](building_tools.md) for the full contract.
 
 If you generate another agent, Spurline now scaffolds both class and spec:
 
@@ -271,7 +271,7 @@ agent.chat("Hi") { |chunk| print chunk.text if chunk.text? }
 agent.chat("What did I just say?") { |chunk| print chunk.text if chunk.text? }
 ```
 
-Pass `session_id:` to resume a previous conversation. The framework loads prior turns from the session store and restores them into short-term memory so the LLM has full context. See [Sessions and Memory](08_sessions_and_memory.md).
+Pass `session_id:` to resume a previous conversation. The framework loads prior turns from the session store and restores them into short-term memory so the LLM has full context. See [Sessions and Memory](sessions_and_memory.md).
 
 ---
 
@@ -334,7 +334,7 @@ end
 bundle exec rspec spec/agents/assistant_agent_spec.rb
 ```
 
-`stub_text("42")` builds a response hash with the text split into `Chunk` objects. `stub_tool_call(:calculator, expression: "2 + 2")` builds a response that triggers the tool execution loop. Both are defined in `spec/support/spurline_helpers.rb`. See [Testing](09_testing.md) for the full testing guide.
+`stub_text("42")` builds a response hash with the text split into `Chunk` objects. `stub_tool_call(:calculator, expression: "2 + 2")` builds a response that triggers the tool execution loop. Both are defined in `spec/support/spurline_helpers.rb`. See [Testing](testing.md) for the full testing guide.
 
 ---
 
@@ -368,8 +368,8 @@ bundle exec spur help                     # List all commands
 
 ## Next Steps
 
-- [The Agent DSL](02_agent_dsl.md) -- every DSL method and its options
-- [Working with Streaming](04_streaming.md) -- chunk types, buffering, and patterns
-- [Building Tools](05_building_tools.md) -- parameter schemas, validation, and timeouts
-- [Security](07_security.md) -- trust levels, injection defense, and data fencing
-- [Testing](09_testing.md) -- stub adapter patterns and security test conventions
+- [The Agent DSL](../reference/agent_dsl.md) -- every DSL method and its options
+- [Working with Streaming](streaming.md) -- chunk types, buffering, and patterns
+- [Building Tools](building_tools.md) -- parameter schemas, validation, and timeouts
+- [Security](security.md) -- trust levels, injection defense, and data fencing
+- [Testing](testing.md) -- stub adapter patterns and security test conventions

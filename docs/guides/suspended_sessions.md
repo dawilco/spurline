@@ -4,7 +4,7 @@ Suspended sessions let an agent pause execution at a safe boundary and resume la
 
 This guide documents the suspension primitives introduced for Milestone 2.2 and how they integrate with `Agent` and `Runner`.
 
-**Prerequisites:** Read [Agent Lifecycle](03_agent_lifecycle.md) and [Sessions and Memory](08_sessions_and_memory.md).
+**Prerequisites:** Read [Agent Lifecycle](agent_lifecycle.md) and [Sessions and Memory](sessions_and_memory.md).
 
 ---
 

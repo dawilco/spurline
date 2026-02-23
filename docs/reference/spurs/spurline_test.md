@@ -220,7 +220,7 @@ Attempts to run tests in a different directory will be rejected by the scope enf
 
 ## Idempotency
 
-`DetectTestFramework` declares `idempotent true` with `idempotency_key :repo_path`. When the framework's idempotency system is active (see the [Idempotency guide](16_idempotency.md)), repeated calls with the same `repo_path` return the cached result without re-running Cartographer analysis. This is safe because the repository's framework does not change between calls in the same session.
+`DetectTestFramework` declares `idempotent true` with `idempotency_key :repo_path`. When the framework's idempotency system is active (see the [Idempotency guide](../../guides/idempotency.md)), repeated calls with the same `repo_path` return the cached result without re-running Cartographer analysis. This is safe because the repository's framework does not change between calls in the same session.
 
 `ParseTestOutput` also declares `idempotent true` — it is a pure function, so any call with the same input always produces the same output.
 

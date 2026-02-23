@@ -4,7 +4,7 @@ Spurline manages sessions and memory on behalf of the developer. You do not crea
 
 This guide covers how sessions work, how memory accumulates and flows into prompts, and how resumption restores prior conversations.
 
-**Prerequisites:** You should be familiar with the [Agent DSL](02_agent_dsl.md) and [Agent Lifecycle](03_agent_lifecycle.md).
+**Prerequisites:** You should be familiar with the [Agent DSL](../reference/agent_dsl.md) and [Agent Lifecycle](agent_lifecycle.md).
 
 ---
 
@@ -286,6 +286,6 @@ Between `#chat` calls, the agent resets its internal state from `:complete` back
 
 ## Next Steps
 
-- [Building Tools](05_building_tools.md) -- tool calls are recorded in turns and visible in session history
-- [Streaming](04_streaming.md) -- how streaming integrates with turn and session completion
-- [Security Pipeline](06_security_pipeline.md) -- how Content objects flow from memory through the context pipeline
+- [Building Tools](building_tools.md) -- tool calls are recorded in turns and visible in session history
+- [Streaming](streaming.md) -- how streaming integrates with turn and session completion
+- [Security Pipeline](security.md) -- how Content objects flow from memory through the context pipeline

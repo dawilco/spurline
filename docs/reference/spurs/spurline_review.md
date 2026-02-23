@@ -195,7 +195,7 @@ module Spurline
 end
 ```
 
-**Suspension behavior:** The agent suspends after posting a review comment. This is intentional — the agent should wait for the PR author's response before continuing. When the author replies, resume the session and the agent can respond to feedback or post follow-up comments. See the [Suspended Sessions guide](15_suspended_sessions.md) for details on resumption.
+**Suspension behavior:** The agent suspends after posting a review comment. This is intentional — the agent should wait for the PR author's response before continuing. When the author replies, resume the session and the agent can respond to feedback or post follow-up comments. See the [Suspended Sessions guide](../../guides/suspended_sessions.md) for details on resumption.
 
 **Guardrails:**
 

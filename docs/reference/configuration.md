@@ -2,7 +2,7 @@
 
 Global settings for Spurline, encrypted credentials, per-agent overrides, and the audit log.
 
-**Prerequisites:** You should be familiar with the [Agent DSL](02_agent_dsl.md) and have a project generated via `spur new`.
+**Prerequisites:** You should be familiar with the [Agent DSL](agent_dsl.md) and have a project generated via `spur new`.
 
 ---
 
@@ -322,6 +322,6 @@ If `audit_max_entries` is configured (globally or via agent guardrails), the in-
 
 ## Next Steps
 
-- [Sessions and Memory](08_sessions_and_memory.md) -- understand how session state is persisted and restored
-- [Security](07_security.md) -- trust levels, injection scanning, and data fencing
-- [Testing](09_testing.md) -- verify configuration and audit behavior in specs
+- [Sessions and Memory](../guides/sessions_and_memory.md) -- understand how session state is persisted and restored
+- [Security](../guides/security.md) -- trust levels, injection scanning, and data fencing
+- [Testing](../guides/testing.md) -- verify configuration and audit behavior in specs

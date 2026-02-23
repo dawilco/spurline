@@ -4,7 +4,7 @@ Tools are how your agent interacts with the outside world. A tool is a single, a
 
 This guide covers everything you need to create, register, and test custom tools.
 
-**Prerequisites:** You should be familiar with the [Agent DSL](02_agent_dsl.md) and understand how agents are configured.
+**Prerequisites:** You should be familiar with the [Agent DSL](../reference/agent_dsl.md) and understand how agents are configured.
 
 ---
 
@@ -166,7 +166,7 @@ If a declared secret cannot be resolved, execution fails with `Spurline::SecretN
 requires_confirmation true
 ```
 
-When set, the framework will invoke the confirmation handler before executing the tool. This is for destructive or expensive operations where a human should approve the action. See [Tool Permissions](06_tool_permissions.md) for details on confirmation handlers.
+When set, the framework will invoke the confirmation handler before executing the tool. This is for destructive or expensive operations where a human should approve the action. See [Tool Permissions](tool_permissions.md) for details on confirmation handlers.
 
 ### `timeout`
 
@@ -346,7 +346,7 @@ This produces a `Content` object with `trust: :external` and `source: "tool:calc
 
 This fencing tells the LLM that the content is data, not instructions. It is the framework's primary defense against indirect prompt injection through tool results. You get this for free. Do not circumvent it.
 
-See [Security](07_security.md) for the full picture of trust levels and data fencing.
+See [Security](security.md) for the full picture of trust levels and data fencing.
 
 ---
 
@@ -405,7 +405,7 @@ RSpec.describe Calculator do
 end
 ```
 
-For integration tests that verify a tool works inside the full agent loop, use the stub adapter. See [Testing](09_testing.md) for patterns on testing agents with tools end-to-end without making live API calls.
+For integration tests that verify a tool works inside the full agent loop, use the stub adapter. See [Testing](testing.md) for patterns on testing agents with tools end-to-end without making live API calls.
 
 ---
 
@@ -427,6 +427,6 @@ Before shipping a tool, verify:
 
 ## Next Steps
 
-- [Tool Permissions](06_tool_permissions.md) -- control who can use which tools and set per-tool confirmation requirements
-- [Security](07_security.md) -- understand trust levels, injection scanning, and data fencing
-- [Building Spur Gems](10_building_spurs.md) -- package tools as distributable gems that self-register on require
+- [Tool Permissions](tool_permissions.md) -- control who can use which tools and set per-tool confirmation requirements
+- [Security](security.md) -- understand trust levels, injection scanning, and data fencing
+- [Building Spur Gems](building_spurs.md) -- package tools as distributable gems that self-register on require

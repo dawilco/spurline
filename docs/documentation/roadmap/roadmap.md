@@ -147,7 +147,7 @@ end
 - `stub_agent_response("text")` and `stub_tool_call(:tool_name, result: {...})`  
 - `assert_tool_called(:tool_name, with: {...})` / `expect_no_injection`
 - Test helper that verifies trust levels on content objects flowing through pipeline
-- Documented in guide 09_testing.md
+- Documented in `guides/testing.md`
 
 ---
 
@@ -317,7 +317,7 @@ The idempotency key is computed, checked against the session's idempotency store
 
 **Outcome:** A developer can mount a web UI in one line and immediately see what their agents are doing — sessions, trust pipeline decisions, tool execution, and orchestration state. Debugging agents no longer requires reading raw JSON or attaching a console.
 
-See `docs/architecture/SPURLINE_DASHBOARD.md` for the full design document.
+See `docs/documentation/architecture/dashboard.md` for the full design document.
 
 ### Why Here in the Sequence
 

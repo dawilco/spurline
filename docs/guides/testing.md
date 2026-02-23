@@ -2,7 +2,7 @@
 
 Spurline is designed to be testable without live API calls. The framework ships a stub adapter and test helpers that make it straightforward to verify agent behavior, tool execution, security enforcement, and session state -- all in-process, all deterministic.
 
-**Prerequisites:** You should be familiar with the [Agent DSL](02_agent_dsl.md), [Building Tools](05_building_tools.md), and [Security](07_security.md).
+**Prerequisites:** You should be familiar with the [Agent DSL](../reference/agent_dsl.md), [Building Tools](building_tools.md), and [Security](security.md).
 
 ---
 
@@ -367,6 +367,6 @@ content = Spurline::Security::Gates::UserInput.wrap("hello", user_id: "test")
 
 ## Next Steps
 
-- [Agent DSL](02_agent_dsl.md) -- the DSL that configures the agents you are testing
-- [Security](07_security.md) -- the trust model and injection scanning under test
-- [Sessions and Memory](08_sessions_and_memory.md) -- session state assertions
+- [Agent DSL](../reference/agent_dsl.md) -- the DSL that configures the agents you are testing
+- [Security](security.md) -- the trust model and injection scanning under test
+- [Sessions and Memory](sessions_and_memory.md) -- session state assertions

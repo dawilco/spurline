@@ -1,60 +1,50 @@
 # Spurline Guides
 
-Practical, task-oriented documentation for building AI agents with Spurline.
+Practical, task-oriented walkthroughs for building AI agents with Spurline.
 
-Read these sequentially to build understanding, or jump to any guide for a specific topic.
+Read these sequentially to build understanding, or jump to any guide for a specific topic. For API details and lookup tables, see [Reference](../reference/README.md). For architecture and philosophy, see [Documentation](../documentation/README.md).
 
 ## Start Here
 
-- [Getting Started](01_getting_started.md) — Zero to running agent in 15 minutes
+- [Getting Started](getting_started.md) — Zero to running agent in 15 minutes
 
 ## Core Concepts
 
-- [The Agent DSL](02_agent_dsl.md) — Every DSL method for configuring agents
-- [The Agent Lifecycle](03_agent_lifecycle.md) — What happens when you call `#run`
-- [Working with Streaming](04_streaming.md) — How to consume streaming output
+- [The Agent DSL](../reference/agent_dsl.md) — Every DSL method for configuring agents *(reference)*
+- [The Agent Lifecycle](agent_lifecycle.md) — What happens when you call `#run`
+- [Working with Streaming](streaming.md) — How to consume streaming output
 
 ## Building
 
-- [Building Tools](05_building_tools.md) — Create custom tools for your agent
-- [Tool Permissions](06_tool_permissions.md) — Control who can use what
+- [Building Tools](building_tools.md) — Create custom tools for your agent
+- [Tool Permissions](tool_permissions.md) — Control who can use what
+- [Building Spur Gems](building_spurs.md) — Package tools as distributable gems
 
 ## Security and State
 
-- [Security](07_security.md) — Trust levels, injection defense, data fencing
-- [Sessions and Memory](08_sessions_and_memory.md) — Conversation state and history
-- [Episodic Memory](14_episodic_memory.md) — Structured session traces for replay and explainability
+- [Security](security.md) — Trust levels, injection defense, data fencing
+- [Sessions and Memory](sessions_and_memory.md) — Conversation state and history
 
 ## Operations
 
-- [Testing](09_testing.md) — Test agents without live API calls
-- [Configuration](12_configuration.md) — Global settings and the audit log
-
-## Analysis
-
-- [Cartographer](13_cartographer.md) — Repository analysis and `RepoProfile` generation
+- [Testing](testing.md) — Test agents without live API calls
 
 ## Autonomous Agents
 
-- [Suspended Sessions](15_suspended_sessions.md) — Pause agents at boundaries and resume later
-- [Idempotency](16_idempotency.md) — Prevent duplicate side effects from tool retries
-- [Scoped Tool Contexts](17_scoped_contexts.md) — Constrain tool access by branch, PR, or repo
-- [Multi-Agent Orchestration](18_multi_agent.md) — Two-tier scale architecture with TaskEnvelope, Ledger, Judge, and MergeQueue
-- [Skills Pattern](24_skills_pattern.md) — Deterministic agents as fixed tool sequences
-- [Spawning Child Agents](25_spawn_agent.md) — Planner/worker delegation with setuid permissions and scope inheritance
-- [Channels](26_channels.md) — Route external events (for example GitHub webhooks) to suspended sessions
+- [Suspended Sessions](suspended_sessions.md) — Pause agents at boundaries and resume later
+- [Idempotency](idempotency.md) — Prevent duplicate side effects from tool retries
+- [Scoped Tool Contexts](scoped_contexts.md) — Constrain tool access by branch, PR, or repo
+- [Skills Pattern](skills_pattern.md) — Deterministic agents as fixed tool sequences
+- [Spawning Child Agents](spawn_agent.md) — Planner/worker delegation with setuid permissions and scope inheritance
+- [Channels](channels.md) — Route external events (for example GitHub webhooks) to suspended sessions
 
-## Bundled Spurs
+## Reference
 
-- [Spurline Test](19_spurline_test.md) — Test execution and result parsing across frameworks
-- [Spurline Docs](20_spurline_docs.md) — Documentation generation from repository analysis
-- [Spurline Review](21_spurline_review.md) — Pull request code review with structured feedback
-- [Spurline Deploy](22_spurline_deploy.md) — Deployment planning and supervised execution
-- [Spurline Local](23_spurline_local.md) — Local LLM inference via Ollama
+These documents have moved to [Reference](../reference/README.md):
 
-For building your own spurs, see [Building Spur Gems](10_building_spurs.md).
-
-## Advanced
-
-- [Building Spur Gems](10_building_spurs.md) — Package tools as distributable gems
-- [CLI Reference](11_cli_reference.md) — Every `spur` command
+- [CLI Reference](../reference/cli.md) — Every `spur` command
+- [Configuration](../reference/configuration.md) — Global settings and the audit log
+- [Cartographer](../reference/cartographer.md) — Repository analysis and `RepoProfile` generation
+- [Episodic Memory](../reference/episodic_memory.md) — Structured session traces for replay and explainability
+- [Multi-Agent Orchestration](../documentation/architecture/multi_agent.md) — Two-tier scale architecture *(documentation)*
+- [Bundled Spurs](../reference/README.md#bundled-spurs) — Test, Docs, Review, Deploy, Local

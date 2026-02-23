@@ -260,6 +260,6 @@ Usage: spur generate agent <name>
 
 ## Next Steps
 
-- [Getting Started](01_getting_started.md) -- use `spur new` to create your first project
-- [Building Tools](05_building_tools.md) -- fill in the tool skeleton from `spur generate tool`
-- [Building Spur Gems](10_building_spurs.md) -- package tools as distributable gems
+- [Getting Started](../guides/getting_started.md) -- use `spur new` to create your first project
+- [Building Tools](../guides/building_tools.md) -- fill in the tool skeleton from `spur generate tool`
+- [Building Spur Gems](../guides/building_spurs.md) -- package tools as distributable gems

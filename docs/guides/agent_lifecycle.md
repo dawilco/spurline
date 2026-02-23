@@ -4,7 +4,7 @@ Every Spurline agent goes through a deterministic sequence of states from creati
 
 This guide covers the state machine, the initialization sequence, the call loop, stop conditions, error handling, and hooks.
 
-**Prerequisites:** You should be familiar with [The Agent DSL](02_agent_dsl.md) and have read [Getting Started](01_getting_started.md).
+**Prerequisites:** You should be familiar with [The Agent DSL](../reference/agent_dsl.md) and have read [Getting Started](getting_started.md).
 
 ---
 
@@ -346,8 +346,8 @@ Here is the complete flow for a single `#run` call where the LLM uses one tool b
 
 ## Next Steps
 
-- [Working with Streaming](04_streaming.md) -- chunk types, buffering, and consumption patterns
-- [Building Tools](05_building_tools.md) -- create the tools the lifecycle dispatches
-- [Security](07_security.md) -- how the context pipeline protects every stage
-- [Sessions and Memory](08_sessions_and_memory.md) -- how state persists across turns
-- [Testing](09_testing.md) -- test lifecycle behavior with the stub adapter
+- [Working with Streaming](streaming.md) -- chunk types, buffering, and consumption patterns
+- [Building Tools](building_tools.md) -- create the tools the lifecycle dispatches
+- [Security](security.md) -- how the context pipeline protects every stage
+- [Sessions and Memory](sessions_and_memory.md) -- how state persists across turns
+- [Testing](testing.md) -- test lifecycle behavior with the stub adapter

@@ -351,8 +351,8 @@ end
 
 ## Related Guides
 
-- [Getting Started](01_getting_started.md) -- scaffold a project and run your first agent
-- [The Agent Lifecycle](03_agent_lifecycle.md) -- what happens after the DSL configures things
-- [Building Tools](05_building_tools.md) -- the tool contract and the tool registry
-- [Security](07_security.md) -- how guardrails connect to the security pipeline
-- [Sessions and Memory](08_sessions_and_memory.md) -- how memory configuration affects context
+- [Getting Started](../guides/getting_started.md) -- scaffold a project and run your first agent
+- [The Agent Lifecycle](../guides/agent_lifecycle.md) -- what happens after the DSL configures things
+- [Building Tools](../guides/building_tools.md) -- the tool contract and the tool registry
+- [Security](../guides/security.md) -- how guardrails connect to the security pipeline
+- [Sessions and Memory](../guides/sessions_and_memory.md) -- how memory configuration affects context

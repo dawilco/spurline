@@ -4,7 +4,7 @@ Spurline treats security as foundation, not middleware. Every piece of content f
 
 This guide covers what you need to know as a developer: how trust levels work, what the framework handles automatically, what you need to configure, and what rules you must follow.
 
-**Prerequisites:** You should be familiar with the [Agent DSL](02_agent_dsl.md) and [Building Tools](05_building_tools.md).
+**Prerequisites:** You should be familiar with the [Agent DSL](../reference/agent_dsl.md) and [Building Tools](building_tools.md).
 
 ---
 
@@ -295,6 +295,6 @@ These are not suggestions. Violating them creates security holes.
 
 ## Next Steps
 
-- [Sessions and Memory](08_sessions_and_memory.md) -- how conversation state is stored and resumed
-- [Testing](09_testing.md) -- test agents without live API calls, including security assertions
-- [Tool Permissions](06_tool_permissions.md) -- control which tools are available and when confirmation is required
+- [Sessions and Memory](sessions_and_memory.md) -- how conversation state is stored and resumed
+- [Testing](testing.md) -- test agents without live API calls, including security assertions
+- [Tool Permissions](tool_permissions.md) -- control which tools are available and when confirmation is required

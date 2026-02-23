@@ -2,7 +2,7 @@
 
 Control which tools can run, who can run them, and which ones require human confirmation before execution. Permissions are enforced by `Spurline::Tools::Runner` on every tool call -- there is no way to bypass them.
 
-**Prerequisites:** [Building Tools](05_building_tools.md) and the [Agent DSL](02_agent_dsl.md).
+**Prerequisites:** [Building Tools](building_tools.md) and the [Agent DSL](../reference/agent_dsl.md).
 
 ---
 
@@ -197,6 +197,6 @@ end
 
 ## Related Guides
 
-- [Building Tools](05_building_tools.md) -- tool anatomy, registration, and the `requires_confirmation` DSL
-- [The Agent DSL](02_agent_dsl.md) -- per-tool configuration via the `tools` keyword
-- [Security](07_security.md) -- how tool results enter the security pipeline as `:external` content
+- [Building Tools](building_tools.md) -- tool anatomy, registration, and the `requires_confirmation` DSL
+- [The Agent DSL](../reference/agent_dsl.md) -- per-tool configuration via the `tools` keyword
+- [Security](security.md) -- how tool results enter the security pipeline as `:external` content

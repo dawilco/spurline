@@ -2,7 +2,7 @@
 
 Channels let Spurline agents receive external events and resume suspended sessions automatically. When an agent suspends (for example, after posting a code review), a channel can route an incoming webhook to the right session and wake the agent up.
 
-**Prerequisites:** Read [Suspended Sessions](15_suspended_sessions.md) and [Security](07_security.md).
+**Prerequisites:** Read [Suspended Sessions](suspended_sessions.md) and [Security](security.md).
 
 ---
 
