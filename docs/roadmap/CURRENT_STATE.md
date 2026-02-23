@@ -1,7 +1,7 @@
 # Spurline — Current State
 
-> Snapshot of what is built, what is tested, and what remains before Phase 2/3 platform work.
-> Updated: February 22, 2026 | Version: 0.2.0
+> Snapshot of what is built, what is tested, and what remains.
+> Updated: February 22, 2026 | Version: 0.3.0
 
 ---
 
@@ -245,4 +245,7 @@ Current three-tier model is implemented (credentials + tool declarations + runti
 - ~~M3.3 spurline-review~~ **Complete**
 - ~~M3.4 spurline-deploy~~ **Complete**
 - ~~M3.5 spurline-local~~ **Complete**
-- **Milestone 4: Multi-Channel Presence, Skills Layer, Dashboard**
+- **M4.1 Skills as Deterministic Agents** — Agent "deterministic mode" for fixed tool sequences
+- **M4.2 spawn_agent** — Planner/worker orchestration hook (ADR-005)
+- **M4.3 Dashboard P1** — Session browser + agent overview (Rack-mountable gem)
+- **M4.4 Multi-Channel Tracer Bullet** — ADR-006 + GitHub webhook integration
