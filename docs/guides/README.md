@@ -40,6 +40,7 @@ Read these sequentially to build understanding, or jump to any guide for a speci
 - [Idempotency](16_idempotency.md) — Prevent duplicate side effects from tool retries
 - [Scoped Tool Contexts](17_scoped_contexts.md) — Constrain tool access by branch, PR, or repo
 - [Multi-Agent Orchestration](18_multi_agent.md) — Two-tier scale architecture with TaskEnvelope, Ledger, Judge, and MergeQueue
+- [Skills Pattern](24_skills_pattern.md) — Deterministic agents as fixed tool sequences
 - [Spawning Child Agents](25_spawn_agent.md) — Planner/worker delegation with setuid permissions and scope inheritance
 - [Channels](26_channels.md) — Route external events (for example GitHub webhooks) to suspended sessions
 
