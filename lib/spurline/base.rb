@@ -27,6 +27,28 @@ module Spurline
     }.freeze
 
     class << self
+      def deterministic_sequence(*tool_names)
+        if tool_names.empty?
+          raise Spurline::ConfigurationError,
+            "deterministic_sequence requires at least one tool name."
+        end
+
+        @deterministic_sequence_config = tool_names.map do |item|
+          item.is_a?(Hash) ? item : item.to_sym
+        end
+      end
+
+      def deterministic_sequence_config
+        own = instance_variable_defined?(:@deterministic_sequence_config) ? @deterministic_sequence_config : nil
+        if own
+          own
+        elsif superclass.respond_to?(:deterministic_sequence_config)
+          superclass.deterministic_sequence_config
+        else
+          nil
+        end
+      end
+
       def tool_registry
         @tool_registry ||= Spurline::Tools::Registry.new
         Spurline::Spur.flush_pending_registrations!(@tool_registry)
@@ -57,6 +79,12 @@ module Spurline
         subclass.instance_variable_set(:@tool_registry, tool_registry)
         subclass.instance_variable_set(:@adapter_registry, adapter_registry)
         subclass.instance_variable_set(:@session_store, @session_store)
+        if instance_variable_defined?(:@deterministic_sequence_config)
+          subclass.instance_variable_set(
+            :@deterministic_sequence_config,
+            @deterministic_sequence_config&.dup
+          )
+        end
       end
 
       private

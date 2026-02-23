@@ -61,26 +61,48 @@ module Spurline
     end
 
     # Single-shot execution. Streams chunks via block or returns an Enumerator (ADR-001).
-    def run(input, suspension_check: nil, &block)
+    def run(input, suspension_check: nil, mode: :normal, tool_sequence: nil, &block)
       if block
-        execute_run(input, suspension_check: suspension_check, &block)
+        execute_run(
+          input,
+          suspension_check: suspension_check,
+          mode: mode,
+          tool_sequence: tool_sequence,
+          &block
+        )
       else
         Streaming::StreamEnumerator.new do |consumer|
-          execute_run(input, suspension_check: suspension_check) { |chunk| consumer.call(chunk) }
+          execute_run(
+            input,
+            suspension_check: suspension_check,
+            mode: mode,
+            tool_sequence: tool_sequence
+          ) { |chunk| consumer.call(chunk) }
         end
       end
     end
 
     # Multi-turn conversation. Session persists between calls.
     # Resets agent state between turns to allow consecutive calls.
-    def chat(input, suspension_check: nil, &block)
+    def chat(input, suspension_check: nil, mode: :normal, tool_sequence: nil, &block)
       reset_for_next_turn! if @state == :complete
 
       if block
-        execute_run(input, suspension_check: suspension_check, &block)
+        execute_run(
+          input,
+          suspension_check: suspension_check,
+          mode: mode,
+          tool_sequence: tool_sequence,
+          &block
+        )
       else
         Streaming::StreamEnumerator.new do |consumer|
-          execute_run(input, suspension_check: suspension_check) { |chunk| consumer.call(chunk) }
+          execute_run(
+            input,
+            suspension_check: suspension_check,
+            mode: mode,
+            tool_sequence: tool_sequence
+          ) { |chunk| consumer.call(chunk) }
         end
       end
     end
@@ -130,10 +152,21 @@ module Spurline
 
     private
 
-    def execute_run(input, suspension_check: nil, resume_checkpoint: nil, &chunk_handler)
+    def execute_run(
+      input,
+      suspension_check: nil,
+      resume_checkpoint: nil,
+      mode: :normal,
+      tool_sequence: nil,
+      &chunk_handler
+    )
       if @session.suspended? && resume_checkpoint.nil?
         raise Spurline::InvalidResumeError,
           "Session is suspended. Use #resume to continue from checkpoint."
+      end
+
+      if mode == :deterministic
+        return execute_deterministic_run(input, tool_sequence: tool_sequence, &chunk_handler)
       end
 
       wrapped_input = resume_checkpoint ? input : wrap_input(input)
@@ -184,6 +217,51 @@ module Spurline
       nil
     rescue Spurline::InvalidResumeError
       raise
+    rescue Spurline::AgentError => e
+      @state = :error
+      @session.error!(e)
+      @audit_log.record(:error, error: e.class.name, message: e.message)
+      run_hook(:on_error, e)
+      raise
+    end
+
+    def execute_deterministic_run(input, tool_sequence: nil, &chunk_handler)
+      sequence = tool_sequence || self.class.deterministic_sequence_config
+      if sequence.nil? || sequence.empty?
+        raise Spurline::ConfigurationError,
+          "No deterministic tool sequence configured. " \
+          "Declare one with `deterministic_sequence :tool1, :tool2` in the agent class, " \
+          "or pass `tool_sequence:` to #run."
+      end
+
+      wrapped_input = wrap_input(input)
+      @state = :running
+      @session.transition_to!(:running)
+      run_hook(:on_turn_start, @session)
+
+      det_runner = Lifecycle::DeterministicRunner.new(
+        tool_runner: @tool_runner,
+        audit_log: @audit_log,
+        session: @session,
+        guardrails: guardrail_settings,
+        scope: @scope,
+        idempotency_ledger: @idempotency_ledger
+      )
+
+      det_runner.run(
+        tool_sequence: sequence,
+        input: wrapped_input,
+        session: @session
+      ) do |chunk|
+        run_hook(:on_tool_call, chunk.metadata, @session) if chunk.tool_end?
+        chunk_handler&.call(chunk)
+      end
+
+      @memory.add_turn(@session.current_turn) if @session.current_turn
+      @state = :complete
+      @session.complete!
+      run_hook(:on_turn_end, @session, @session.current_turn)
+      run_hook(:on_finish, @session)
     rescue Spurline::AgentError => e
       @state = :error
       @session.error!(e)
