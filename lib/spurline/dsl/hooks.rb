@@ -14,6 +14,9 @@ module Spurline
         on_resume
         on_finish
         on_error
+        on_child_spawn
+        on_child_complete
+        on_child_error
       ].freeze
 
       def self.included(base)

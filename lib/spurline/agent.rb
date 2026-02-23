@@ -118,6 +118,20 @@ module Spurline
       @adapter = Adapters::StubAdapter.new(responses: responses)
     end
 
+    # Spawn a child agent with inherited permissions and scope (ADR-005).
+    # The child runs in its own session and streams chunks to the provided block.
+    # Returns the child's session.
+    #
+    # @param agent_class [Class] A class that inherits from Spurline::Agent
+    # @param input [String] The input to pass to the child agent's #run
+    # @param permissions [Hash, nil] Optional permission overrides (must be <= parent)
+    # @param scope [Spurline::Tools::Scope, Hash, nil] Optional scope override (must be <= parent)
+    # @return [Spurline::Session::Session] The child agent's completed session
+    def spawn_agent(agent_class, input:, permissions: nil, scope: nil, &block)
+      spawner = Orchestration::AgentSpawner.new(parent_agent: self)
+      spawner.spawn(agent_class, input: input, permissions: permissions, scope: scope, &block)
+    end
+
     # Structured per-session event trace.
     def episodes
       @memory.episodic
