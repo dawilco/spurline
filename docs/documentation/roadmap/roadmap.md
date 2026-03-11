@@ -473,6 +473,7 @@ These are architectural questions that need ADRs before implementation begins:
 | Dashboard micro-framework (Sinatra vs Roda) | Milestone 2.6 | Roda is lighter; Sinatra has broader recognition. Both are proven. |
 | Dashboard auto-refresh strategy (polling vs SSE) | Milestone 2.6 | Polling is simpler; SSE is nicer for watching live sessions |
 | Dashboard versioning relative to core (shared vs independent semver) | Milestone 2.6 | Affects release cadence and compatibility expectations |
+| LLM adapter retry logic (exponential backoff for overloaded_error/rate limits) | Milestone 0.2 | Production agents fail silently on transient API errors without retry |
 
 ---
 

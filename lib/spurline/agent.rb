@@ -323,7 +323,8 @@ module Spurline
         adapter_kwargs[:model] = defaults[:model] if defaults && defaults[:model]
 
         # Forward all use_model kwargs except :name (which is the adapter selector)
-        user_kwargs = config.except(:name)
+        # and per-call API params like :tool_choice that belong in stream config, not constructor.
+        user_kwargs = config.reject { |k, _| %i[name tool_choice].include?(k) }
         adapter_kwargs.merge!(user_kwargs)
 
         adapter_kwargs.empty? ? adapter_class.new : adapter_class.new(**adapter_kwargs)

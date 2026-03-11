@@ -28,7 +28,7 @@ module Spurline
 
       def edit!
         ensure_master_key!
-        plaintext = File.file?(credentials_path) ? decrypt_existing_credentials : DEFAULT_TEMPLATE
+        plaintext = File.file?(credentials_path) ? decrypt_existing_credentials : project_template
 
         Tempfile.create(["spurline-credentials", ".yml"]) do |file|
           path = file.path
@@ -53,6 +53,11 @@ module Spurline
       private
 
       attr_reader :project_root
+
+      def project_template
+        template_path = File.join(project_root, "config", "credentials.template.yml")
+        File.file?(template_path) ? File.read(template_path) : DEFAULT_TEMPLATE
+      end
 
       def credentials_path
         File.join(project_root, "config", "credentials.enc.yml")

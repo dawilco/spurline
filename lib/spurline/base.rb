@@ -55,6 +55,10 @@ module Spurline
         @tool_registry
       end
 
+      def toolkit_registry
+        @toolkit_registry ||= Spurline::Tools::ToolkitRegistry.new(tool_registry: tool_registry)
+      end
+
       def adapter_registry
         @adapter_registry ||= begin
           registry = Spurline::Adapters::Registry.new
@@ -77,6 +81,7 @@ module Spurline
         super
         # Share registries with subclasses
         subclass.instance_variable_set(:@tool_registry, tool_registry)
+        subclass.instance_variable_set(:@toolkit_registry, toolkit_registry)
         subclass.instance_variable_set(:@adapter_registry, adapter_registry)
         subclass.instance_variable_set(:@session_store, @session_store)
         if instance_variable_defined?(:@deterministic_sequence_config)

@@ -1,0 +1,4 @@
+# Production permissions — automated service, no interactive confirmation.
+tools:
+  post_review_comment:
+    requires_confirmation: false

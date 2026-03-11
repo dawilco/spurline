@@ -102,4 +102,8 @@ module Spurline
   # Raised when a spawned child agent fails during execution.
   # The message includes parent/child session IDs for audit correlation.
   class SpawnError < AgentError; end
+
+  # Raised when a toolkit name cannot be resolved in the toolkit registry.
+  # Ensure the toolkit class is defined and loaded before referencing it.
+  class ToolkitNotFoundError < AgentError; end
 end

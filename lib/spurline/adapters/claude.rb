@@ -36,6 +36,7 @@ module Spurline
 
           params[:system] = system if system && !system.empty?
           params[:tools] = format_tools(tools) if tools && !tools.empty?
+          params[:tool_choice] = config[:tool_choice] if config[:tool_choice]
 
           client.messages.stream(**params).each do |event|
             handle_stream_event(
@@ -83,9 +84,18 @@ module Spurline
 
       def format_messages(messages)
         messages.map do |msg|
+          content = msg[:content]
+
+          # Content blocks (tool_use, tool_result) pass through as-is
+          formatted_content = if content.is_a?(Array)
+            content
+          else
+            content.to_s
+          end
+
           {
             role: msg[:role] || "user",
-            content: msg[:content].to_s,
+            content: formatted_content,
           }
         end
       end

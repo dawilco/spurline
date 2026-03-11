@@ -9,4 +9,10 @@
 |----|------|---|-------|------|
 | #3782 | 10:23 PM | 🔵 | Spurline session and state machine architecture analyzed for suspended sessions feature | ~700 |
 | #3632 | 6:00 PM | ⚖️ | OpenAI adapter architecture with stop reason normalization and tool call accumulation | ~541 |
+
+### Feb 23, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #4214 | 12:07 AM | 🔴 | Fixed message history accumulation in LLM loop | ~327 |
 </claude-mem-context>

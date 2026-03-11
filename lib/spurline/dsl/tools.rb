@@ -26,11 +26,25 @@ module Spurline
           tool_names.each { |name| @tool_config[:names] << name.to_sym }
           tool_configs.each do |name, config|
             @tool_config[:names] << name.to_sym
-            @tool_config[:configs][name.to_sym] = config
+            existing = @tool_config[:configs][name.to_sym]
+            @tool_config[:configs][name.to_sym] = existing ? existing.merge(config) : config
           end
         end
 
+        # Include one or more toolkits by name. Toolkit expansion is deferred
+        # until tool_config is accessed, so toolkits can be registered after
+        # agent classes are defined (supports any boot order).
+        #
+        #   toolkits :git, :linear
+        #   toolkits :provisioning, provisioning: { scoped: true }
+        #
+        def toolkits(*toolkit_names, **overrides)
+          @pending_toolkits ||= []
+          @pending_toolkits << { names: toolkit_names.map(&:to_sym), overrides: overrides }
+        end
+
         def tool_config
+          expand_pending_toolkits!
           own = @tool_config || { names: [], configs: {} }
           if superclass.respond_to?(:tool_config)
             inherited = superclass.tool_config
@@ -71,6 +85,39 @@ module Spurline
         end
 
         private
+
+        def expand_pending_toolkits!
+          return unless instance_variable_defined?(:@pending_toolkits) && @pending_toolkits&.any?
+
+          pending = @pending_toolkits
+          @pending_toolkits = nil
+
+          pending.each do |ref|
+            ref[:names].each do |tk_name|
+              toolkit = self.toolkit_registry.fetch(tk_name)
+
+              # Toolkits own their tools — register them into the agent's tool registry.
+              toolkit.tool_classes.each do |tool_name, tool_class|
+                self.tool_registry.register(tool_name, tool_class) unless self.tool_registry.registered?(tool_name)
+              end
+
+              tool_names = toolkit.tools
+              shared = toolkit.shared_config
+
+              if shared.empty? && ref[:overrides].empty?
+                tools(*tool_names)
+              else
+                tool_configs = {}
+                tool_names.each do |tool_name|
+                  merged = shared.dup
+                  merged.merge!(ref[:overrides][tk_name] || {})
+                  tool_configs[tool_name] = merged unless merged.empty?
+                end
+                tools(*tool_names, **tool_configs)
+              end
+            end
+          end
+        end
 
         def spur_default_permissions
           return {} unless defined?(Spurline::Spur)

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "time"
+require "securerandom"
 require_relative "suspension_boundary"
 
 module Spurline
@@ -75,7 +76,14 @@ module Spurline
 
           # Separate system prompt from messages while preserving role semantics.
           system_prompt, messages = build_messages(contents, processed, input)
-          @messages_so_far.concat(messages.map(&:dup))
+
+          # On the first loop, seed @messages_so_far with the initial messages.
+          # On subsequent loops, the conversation history is already accumulated
+          # via assistant tool_use and tool_result entries appended below.
+          if @loop_count == 1
+            @messages_so_far = messages.map(&:dup)
+          end
+
           check_suspension!(
             boundary_type: :before_llm_call,
             turn: turn,
@@ -90,12 +98,12 @@ module Spurline
           @audit.record(:llm_request,
             turn: turn.number,
             loop: @loop_count,
-            message_count: messages.length,
+            message_count: @messages_so_far.length,
             has_tools: !tools_schema.empty?,
             tool_count: tools_schema.length)
 
           @adapter.stream(
-            messages: messages,
+            messages: @messages_so_far,
             system: system_prompt,
             tools: tools_schema,
             config: adapter_config
@@ -113,6 +121,18 @@ module Spurline
           # 4. Parse response
           if buffer.tool_call?
             tool_calls = buffer.tool_calls
+
+            # Append assistant tool_use message to conversation history
+            tool_use_blocks = tool_calls.map do |tc|
+              tool_use_id = find_tool_use_id(buffer, tc[:name])
+              {
+                type: "tool_use",
+                id: tool_use_id || "toolu_#{SecureRandom.hex(12)}",
+                name: tc[:name],
+                input: tc[:arguments] || {},
+              }
+            end
+            @messages_so_far << { role: "assistant", content: tool_use_blocks }
 
             tool_calls.each do |tool_call|
               filtered_args = Audit::SecretFilter.filter(
@@ -210,7 +230,19 @@ module Spurline
                 parent_episode_id: tool_episode_id || decision_episode_id || parent_episode_id
               ) || parent_episode_id
 
-              # 6. Update input for next loop iteration with tool result
+              # 6. Append tool_result to conversation history for the LLM
+              tool_use_id = find_tool_use_id(buffer, tool_call[:name])
+              result_text = result.respond_to?(:text) ? result.text : result.to_s
+              result_content = result_text.is_a?(String) ? result_text : JSON.generate(result_text)
+              @messages_so_far << {
+                role: "user",
+                content: [{
+                  type: "tool_result",
+                  tool_use_id: tool_use_id || "toolu_#{SecureRandom.hex(12)}",
+                  content: result_content,
+                }],
+              }
+
               @last_tool_result = serialize_tool_result(result)
               check_suspension!(
                 boundary_type: :after_tool_result,
@@ -337,6 +369,13 @@ module Spurline
 
       def checkpoint_value(checkpoint, key)
         checkpoint[key] || checkpoint[key.to_s]
+      end
+
+      def find_tool_use_id(buffer, tool_name)
+        chunk = buffer.chunks.find do |c|
+          c.metadata[:tool_name] == tool_name && c.metadata[:tool_use_id]
+        end
+        chunk&.metadata&.dig(:tool_use_id)
       end
 
       def serialize_tool_result(result)
