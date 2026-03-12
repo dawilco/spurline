@@ -2,9 +2,9 @@
 
 All notable changes to Spurline are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and [Semantic Versioning](https://semver.org/).
 
-## [0.3.0] - 2026-02-22
+## [0.3.0] - 2026-03-12
 
-Milestone 2 (Autonomous Agents) and Milestone 3 (Agentic Development Platform) complete. 846 specs, 0 failures.
+Milestone 2 (Autonomous Agents), Milestone 3 (Agentic Development Platform), and Milestone 4 complete. 931 specs, 0 failures.
 
 ### Added
 
@@ -23,6 +23,16 @@ Milestone 2 (Autonomous Agents) and Milestone 3 (Agentic Development Platform) c
 - **spurline-review (M3.3)** — 4 tools (AnalyzeDiff, FetchPRDiff, PostReviewComment, SummarizeFindings) + DiffParser + GitHubClient + CodeReviewAgent with suspension.
 - **spurline-deploy (M3.4)** — 4 tools (GenerateDeployPlan, ValidateDeployPrereqs, ExecuteDeployStep, RollbackDeploy) + PlanBuilder + PrereqChecker + CommandExecutor + DeployAgent with confirmation gates.
 - **spurline-local (M3.5)** — Ollama adapter for local inference. HttpClient, ModelManager, HealthCheck. No API key required.
+
+#### Milestone 4: Production Hardening
+
+- **Deterministic Agents (M4.1)** — Fixed tool sequence mode for predictable, repeatable agent behavior
+- **Spawn Agent (M4.2)** — Planner/worker orchestration hook for multi-agent coordination
+- **Dashboard (M4.3)** — `spurline-dashboard` read-only Sinatra app for session browsing and agent inspection
+- **ADR-006 (M4.4)** — GitHub channel routing tracer bullet for multi-channel presence
+- **Toolkit Support** — Review app integration and toolkit registration
+- **Integration Tests** — 14 integration test examples covering M2-M4 features, LLM suspension VCR cassette
+- **Docs Reorg** — Restructured docs into documentation/, guides/, and reference/ sections
 
 #### Framework Enhancements
 
@@ -46,7 +56,7 @@ Milestone 2 (Autonomous Agents) and Milestone 3 (Agentic Development Platform) c
 ### Fixed
 
 - Error classes consolidated into `errors.rb` (removed inline definitions in orchestration modules)
-- `spurline-web-search` gemspec version constraint updated `~> 0.1` to `~> 0.2`
+- All spur gemspec dependency constraints updated to `~> 0.3` and versions aligned to 0.3.0
 
 ## [0.2.0] - 2026-02-21
 

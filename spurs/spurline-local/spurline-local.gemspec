@@ -16,6 +16,6 @@ Gem::Specification.new do |spec|
   spec.files = Dir["lib/**/*.rb"]
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "spurline-core", "~> 0.2"
+  spec.add_dependency "spurline-core", "~> 0.3"
   # No other runtime dependencies - stdlib net/http only.
 end
